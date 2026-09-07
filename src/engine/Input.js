@@ -26,6 +26,10 @@ export class Input {
   #held = new Set();
   #pressed = new Set();
   #released = new Set();
+  // 가상 입력(터치 버튼 등) — 키보드와 동일한 '액션' 이름으로 담긴다
+  #vHeld = new Set();
+  #vPressed = new Set();
+  #vReleased = new Set();
   locked = false;
 
   constructor(target = window) {
@@ -39,7 +43,7 @@ export class Input {
       this.#held.delete(e.code);
       this.#released.add(e.code);
     });
-    window.addEventListener('blur', () => { this.#held.clear(); });
+    window.addEventListener('blur', () => { this.#held.clear(); this.clearVirtual(); });
   }
 
   #any(set, action) {
@@ -50,19 +54,32 @@ export class Input {
   }
 
   // ── 게임플레이용 (lock 시 false) ──
-  down(action)     { return !this.locked && this.#any(this.#held, action); }
-  pressed(action)  { return !this.locked && this.#any(this.#pressed, action); }
-  released(action) { return !this.locked && this.#any(this.#released, action); }
+  down(action)     { return !this.locked && (this.#any(this.#held, action) || this.#vHeld.has(action)); }
+  pressed(action)  { return !this.locked && (this.#any(this.#pressed, action) || this.#vPressed.has(action)); }
+  released(action) { return !this.locked && (this.#any(this.#released, action) || this.#vReleased.has(action)); }
   /** 좌우 축 (-1, 0, 1) */
   axis() { return (this.down('right') ? 1 : 0) - (this.down('left') ? 1 : 0); }
 
   // ── UI용 (lock 무시) ──
-  downRaw(action)    { return this.#any(this.#held, action); }
-  pressedRaw(action) { return this.#any(this.#pressed, action); }
+  downRaw(action)    { return this.#any(this.#held, action) || this.#vHeld.has(action); }
+  pressedRaw(action) { return this.#any(this.#pressed, action) || this.#vPressed.has(action); }
 
   lock()   { this.locked = true; }
   unlock() { this.locked = false; }
 
+  /**
+   * 터치 버튼 등 가상 입력을 키보드와 같은 액션으로 흘려보낸다.
+   *   input.virtual('jump', true)  // 누름
+   *   input.virtual('jump', false) // 뗌
+   */
+  virtual(action, on) {
+    if (on) { if (!this.#vHeld.has(action)) { this.#vHeld.add(action); this.#vPressed.add(action); } }
+    else if (this.#vHeld.delete(action)) this.#vReleased.add(action);
+  }
+  /** 한 프레임짜리 탭 (누르고 바로 뗌) */
+  tap(action) { this.#vPressed.add(action); this.#vReleased.add(action); }
+  clearVirtual() { for (const a of this.#vHeld) this.#vReleased.add(a); this.#vHeld.clear(); }
+
   /** 매 고정 스텝의 끝에서 호출 — 1프레임짜리 상태 정리 */
-  endStep() { this.#pressed.clear(); this.#released.clear(); }
+  endStep() { this.#pressed.clear(); this.#released.clear(); this.#vPressed.clear(); this.#vReleased.clear(); }
 }
