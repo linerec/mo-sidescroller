@@ -1,0 +1,6 @@
+node_modules/
+.DS_Store
+
+# Blender source files (art source, not needed to run the game)
+*.blend
+*.blend1

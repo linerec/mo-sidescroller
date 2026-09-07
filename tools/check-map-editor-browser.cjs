@@ -1,0 +1,45 @@
+const {chromium}=require(process.env.PLAYWRIGHT_PACKAGE||'playwright');
+const assert=require('node:assert/strict');
+(async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
+ try{
+  const context=await browser.newContext({viewport:{width:1440,height:1050},acceptDownloads:true});
+  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto((process.env.MO_URL||'http://127.0.0.1:8080')+'/map-editor.html');
+  await page.waitForFunction(()=>window.mapEditor?.preview);
+  assert.equal(await page.evaluate(()=>mapEditor.kit.templates.size),30);
+  const original=await page.evaluate(()=>JSON.stringify(mapEditor.map));
+  const grid=await page.locator('#grid').boundingBox();
+  const h=await page.evaluate(()=>mapEditor.map.rows.length);
+  const point=(x,y)=>({x:grid.x+(x+.5)*24,y:grid.y+(h-y-.5)*24});
+  const a=point(5,4),b=point(8,4);
+  await page.mouse.move(a.x,a.y);await page.mouse.down();await page.mouse.move(b.x,b.y,{steps:4});await page.mouse.up();
+  assert.equal(await page.evaluate(()=>mapEditor.map.rows.at(-5).slice(5,9)),'####');
+  await page.click('#undo');assert.equal(await page.evaluate(()=>JSON.stringify(mapEditor.map)),original);
+  await page.click('#redo');assert.equal(await page.evaluate(()=>mapEditor.map.rows.at(-5).slice(5,9)),'####');
+  await page.click('[data-tool="="]');let p=point(10,5);await page.mouse.click(p.x,p.y);
+  await page.selectOption('#asset','tree_willow');p=point(7,2);await page.mouse.click(p.x,p.y);
+  assert.equal(await page.evaluate(()=>mapEditor.map.decorations[0].asset),'tree_willow');
+  await page.selectOption('#map','stage-1-2');await page.waitForFunction(()=>mapEditor.map.id==='stage-1-2');
+  await page.selectOption('#map','stage-1-1');await page.waitForFunction(()=>mapEditor.map.id==='stage-1-1');
+  assert.equal(await page.evaluate(()=>mapEditor.map.rows.at(-5).slice(5,9)),'####');
+  await page.click('#save');const saved=await page.evaluate(()=>localStorage.getItem('mo:map-draft:v1:stage-1-1'));
+  const downloadPromise=page.waitForEvent('download');await page.click('#export');const download=await downloadPromise;await download.saveAs('/tmp/mo-map-export.json');
+  const exported=JSON.parse(require('node:fs').readFileSync('/tmp/mo-map-export.json','utf8'));assert.deepEqual(exported,JSON.parse(saved));
+  await page.locator('#import').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{"version":9}')});
+  assert.match(await page.locator('#status').textContent(),/올바르지/);
+  assert.equal(await page.evaluate(()=>JSON.stringify(mapEditor.map)),saved);
+  await page.click('#save');await page.waitForTimeout(250);await page.screenshot({path:'assets/environment/woodland/editor-preview.png'});
+  const gamePagePromise=context.waitForEvent('page');await page.click('#play');const gamePage=await gamePagePromise;
+  gamePage.on('pageerror',e=>errors.push(e.message));
+  await gamePage.waitForFunction(()=>window.game?.stage?.player?.visual?.model&&game.state==='playing'&&!game.stageManager.busy);
+  assert.equal(await gamePage.evaluate(()=>game.stage.mapData.rows.at(-5).slice(5,9)),'####');
+  assert.equal(await gamePage.evaluate(()=>game.physics.bodies.some(b=>b.type==='static'&&b.left<=5&&b.right>=9&&Math.abs(b.top-5)<.001)),true);
+  assert.match(await gamePage.evaluate(()=>game.stage.objective),/초안/);
+  const beforeSave=await gamePage.evaluate(()=>{const before=JSON.stringify({...localStorage});game.saveProgress();return {before,after:JSON.stringify({...localStorage})};});assert.equal(beforeSave.before,beforeSave.after);
+  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(200);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+  await page.screenshot({path:'/tmp/mo-map-editor-mobile.png'});
+  assert.deepEqual(errors,[]);console.log('PASS: real Blender preview, painting, undo/redo, props, switching, draft persistence, export, invalid import, game collision, save isolation, mobile.');
+ }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exit(1);});

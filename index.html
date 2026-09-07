@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="data:," />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mo — 2.5D Side-scroller Framework</title>
+  <link rel="stylesheet" href="./src/ui/styles.css" />
+  <!--
+    Three.js는 CDN import map으로 불러옵니다. (빌드 도구 불필요)
+    ES Module은 file:// 로는 동작하지 않으므로 반드시 로컬 서버로 여세요.
+      npm start   (또는)   python3 -m http.server 8080
+  -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="game">
+    <canvas id="gl"></canvas>
+    <!-- 모든 UI(HUD, 대화창, 화면 전환 등)는 JS가 이 안에 생성합니다 -->
+    <div id="ui"></div>
+  </div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

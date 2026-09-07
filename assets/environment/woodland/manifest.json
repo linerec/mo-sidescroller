@@ -1,0 +1,400 @@
+{
+  "version": 1,
+  "artRevision": 2,
+  "name": "모찌의 숲 · 심연의 빛",
+  "grid": 1,
+  "depth": 2,
+  "front": "+Z",
+  "up": "+Y",
+  "library": "woodland-kit.glb",
+  "assets": [
+    {
+      "id": "soil_a",
+      "label": "흙 속 A",
+      "role": "solid",
+      "footprint": [
+        1,
+        1
+      ],
+      "anchor": "cell_bottom_left",
+      "collision": {
+        "size": [
+          1,
+          1
+        ],
+        "offset": [
+          0.5,
+          0.5
+        ]
+      }
+    },
+    {
+      "id": "soil_b",
+      "label": "흙 속 B",
+      "role": "solid",
+      "footprint": [
+        1,
+        1
+      ],
+      "anchor": "cell_bottom_left",
+      "collision": {
+        "size": [
+          1,
+          1
+        ],
+        "offset": [
+          0.5,
+          0.5
+        ]
+      }
+    },
+    {
+      "id": "top_a",
+      "label": "잔디 윗면 A",
+      "role": "surface",
+      "footprint": [
+        1,
+        0
+      ],
+      "anchor": "surface_left",
+      "collision": null
+    },
+    {
+      "id": "top_b",
+      "label": "잔디 윗면 B",
+      "role": "surface",
+      "footprint": [
+        1,
+        0
+      ],
+      "anchor": "surface_left",
+      "collision": null
+    },
+    {
+      "id": "edge_left",
+      "label": "흙 둔덕 왼쪽",
+      "role": "edge",
+      "footprint": [
+        1,
+        1
+      ],
+      "anchor": "cell_bottom_left",
+      "collision": null
+    },
+    {
+      "id": "edge_right",
+      "label": "흙 둔덕 오른쪽",
+      "role": "edge",
+      "footprint": [
+        1,
+        1
+      ],
+      "anchor": "cell_bottom_left",
+      "collision": null
+    },
+    {
+      "id": "roots",
+      "label": "매달린 뿌리",
+      "role": "edge",
+      "footprint": [
+        1,
+        0
+      ],
+      "anchor": "surface_left",
+      "collision": null
+    },
+    {
+      "id": "platform_left",
+      "label": "나무 발판 left",
+      "role": "platform",
+      "footprint": [
+        1,
+        0.3
+      ],
+      "anchor": "surface_left",
+      "collision": {
+        "size": [
+          1,
+          0.3
+        ],
+        "offset": [
+          0.5,
+          -0.15
+        ],
+        "oneWay": true
+      }
+    },
+    {
+      "id": "platform_middle",
+      "label": "나무 발판 middle",
+      "role": "platform",
+      "footprint": [
+        1,
+        0.3
+      ],
+      "anchor": "surface_left",
+      "collision": {
+        "size": [
+          1,
+          0.3
+        ],
+        "offset": [
+          0.5,
+          -0.15
+        ],
+        "oneWay": true
+      }
+    },
+    {
+      "id": "platform_right",
+      "label": "나무 발판 right",
+      "role": "platform",
+      "footprint": [
+        1,
+        0.3
+      ],
+      "anchor": "surface_left",
+      "collision": {
+        "size": [
+          1,
+          0.3
+        ],
+        "offset": [
+          0.5,
+          -0.15
+        ],
+        "oneWay": true
+      }
+    },
+    {
+      "id": "platform_single",
+      "label": "나무 발판 single",
+      "role": "platform",
+      "footprint": [
+        1,
+        0.3
+      ],
+      "anchor": "surface_left",
+      "collision": {
+        "size": [
+          1,
+          0.3
+        ],
+        "offset": [
+          0.5,
+          -0.15
+        ],
+        "oneWay": true
+      }
+    },
+    {
+      "id": "tree_oak",
+      "label": "포근한 참나무",
+      "role": "tree",
+      "footprint": [
+        5,
+        6.6
+      ],
+      "anchor": "ground_center",
+      "collision": null
+    },
+    {
+      "id": "tree_birch",
+      "label": "키 큰 자작나무",
+      "role": "tree",
+      "footprint": [
+        5,
+        7.8
+      ],
+      "anchor": "ground_center",
+      "collision": null
+    },
+    {
+      "id": "tree_willow",
+      "label": "늘어진 버드나무",
+      "role": "tree",
+      "footprint": [
+        5,
+        6.0
+      ],
+      "anchor": "ground_center",
+      "collision": null
+    },
+    {
+      "id": "bush_0",
+      "label": "작은 관목 1",
+      "role": "prop",
+      "footprint": [
+        1.7,
+        1.0
+      ],
+      "anchor": "ground_center",
+      "collision": null
+    },
+    {
+      "id": "bush_1",
+      "label": "작은 관목 2",
+      "role": "prop",
+      "footprint": [
+        1.7,
+        1.0
+      ],
+      "anchor": "ground_center",
+      "collision": null
+    },
+    {
+      "id": "fern",
+      "label": "고사리",
+      "role": "prop",
+      "footprint": [
+        1.2,
+        0.85
+      ],
+      "anchor": "ground_center",
+      "collision": null
+    },
+    {
+      "id": "mushrooms",
+      "label": "작은 버섯 무리",
+      "role": "prop",
+      "footprint": [
+        1.1,
+        0.7
+      ],
+      "anchor": "ground_center",
+      "collision": null
+    },
+    {
+      "id": "flowers",
+      "label": "들꽃 무리",
+      "role": "prop",
+      "footprint": [
+        0.8,
+        0.55
+      ],
+      "anchor": "ground_center",
+      "collision": null
+    },
+    {
+      "id": "grass",
+      "label": "풀 포기",
+      "role": "prop",
+      "footprint": [
+        0.55,
+        0.35
+      ],
+      "anchor": "ground_center",
+      "collision": null
+    },
+    {
+      "id": "rock",
+      "label": "이끼 바위",
+      "role": "prop",
+      "footprint": [
+        1.2,
+        0.7
+      ],
+      "anchor": "ground_center",
+      "collision": null
+    },
+    {
+      "id": "arch",
+      "label": "오래된 숲의 돌문",
+      "role": "landmark",
+      "footprint": [
+        2.4,
+        3.1
+      ],
+      "anchor": "ground_center",
+      "collision": null
+    },
+    {
+      "id": "distant_tree",
+      "label": "먼 숲 실루엣",
+      "role": "backdrop",
+      "footprint": [
+        5,
+        8
+      ],
+      "anchor": "ground_center",
+      "collision": null
+    },
+    {
+      "id": "hill",
+      "label": "먼 언덕",
+      "role": "backdrop",
+      "footprint": [
+        12,
+        4
+      ],
+      "anchor": "ground_center",
+      "collision": null
+    },
+    {
+      "id": "keeper",
+      "label": "등불을 지키는 숲지기",
+      "role": "actor",
+      "footprint": [
+        0.8,
+        1.5
+      ],
+      "anchor": "ground_center",
+      "collision": null
+    },
+    {
+      "id": "cliff_face",
+      "label": "깊은 절벽 단면",
+      "role": "foundation",
+      "footprint": [
+        1,
+        8
+      ],
+      "anchor": "surface_left",
+      "collision": null
+    },
+    {
+      "id": "ancient_tree",
+      "label": "잠든 숲의 거신",
+      "role": "landmark",
+      "footprint": [
+        17,
+        20
+      ],
+      "anchor": "ground_center",
+      "collision": null
+    },
+    {
+      "id": "root_arch",
+      "label": "거대한 뿌리 아치",
+      "role": "landmark",
+      "footprint": [
+        12,
+        16
+      ],
+      "anchor": "ground_center",
+      "collision": null
+    },
+    {
+      "id": "glow_reeds",
+      "label": "빛나는 씨앗 풀",
+      "role": "prop",
+      "footprint": [
+        0.8,
+        1.0
+      ],
+      "anchor": "ground_center",
+      "collision": null
+    },
+    {
+      "id": "hanging_vine",
+      "label": "천장에서 늘어진 덩굴",
+      "role": "prop",
+      "footprint": [
+        1,
+        4
+      ],
+      "anchor": "top_center",
+      "collision": null
+    }
+  ]
+}

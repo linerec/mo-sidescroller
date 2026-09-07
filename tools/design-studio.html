@@ -1,0 +1,1192 @@
+<meta charset="utf-8">
+<title>Mo Story Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Serif:wght@400;600&display=swap">
+<style>
+/* ─────────────── tokens (light = bare :root) ─────────────── */
+:root{
+  --bg:#efe9db; --panel:#f7f2e7; --panel-2:#ece4d2; --raised:#fffdf7;
+  --ink:#2b2620; --ink-dim:#6f685b; --ink-faint:#9a917f;
+  --line:#ddd3bd; --line-soft:#e7dfcd;
+  --accent:#a9781d; --accent-ink:#5f4410; --accent-soft:#f0e2c2;
+  --teal:#3f6f68; --teal-soft:#dbe7e2;
+  --danger:#b0463b; --good:#5a7c3f;
+  --shadow:0 8px 30px rgba(60,48,20,.10);
+  --f-display:"Fraunces",Georgia,serif;
+  --f-serif:"Noto Serif",Georgia,serif;
+  --f-sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12140f; --panel:#1a1d16; --panel-2:#23271d; --raised:#20241a;
+  --ink:#ece5d4; --ink-dim:#9c9788; --ink-faint:#6d685b;
+  --line:#2f3428; --line-soft:#262b20;
+  --accent:#e9c46a; --accent-ink:#f2d894; --accent-soft:#2c2a1c;
+  --teal:#86b4aa; --teal-soft:#1e2a27;
+  --danger:#d1685f; --good:#8fb26a;
+  --shadow:0 10px 34px rgba(0,0,0,.45);
+}}
+:root[data-theme="dark"]{
+  --bg:#12140f; --panel:#1a1d16; --panel-2:#23271d; --raised:#20241a;
+  --ink:#ece5d4; --ink-dim:#9c9788; --ink-faint:#6d685b;
+  --line:#2f3428; --line-soft:#262b20;
+  --accent:#e9c46a; --accent-ink:#f2d894; --accent-soft:#2c2a1c;
+  --teal:#86b4aa; --teal-soft:#1e2a27;
+  --danger:#d1685f; --good:#8fb26a;
+  --shadow:0 10px 34px rgba(0,0,0,.45);
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-sans);font-size:15px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+h1,h2,h3{margin:0;font-weight:600;text-wrap:balance}
+button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer;border:none;background:none}
+input,textarea,select{font-family:inherit;font-size:inherit;color:var(--ink);background:var(--raised);
+  border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+textarea{resize:vertical;line-height:1.55}
+::placeholder{color:var(--ink-faint)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ─────────────── header ─────────────── */
+header{display:flex;align-items:center;gap:16px;padding:12px 20px;background:var(--panel);
+  border-bottom:1px solid var(--line);flex:none;z-index:5}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand .mark{font-family:var(--f-display);font-weight:600;font-size:24px;letter-spacing:.02em;color:var(--accent)}
+.brand .sub{font-family:var(--f-serif);font-size:14px;color:var(--ink-dim);font-style:italic}
+.brand .mark .glyph{font-size:18px;margin-right:2px}
+header .spacer{flex:1}
+.hbtn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;border:1px solid var(--line);
+  background:var(--raised);font-size:13px;color:var(--ink-dim);white-space:nowrap}
+.hbtn:hover{color:var(--ink);border-color:var(--accent)}
+.save-state{font-size:12px;color:var(--ink-faint);font-variant-numeric:tabular-nums;min-width:96px;text-align:right}
+.save-state.dirty{color:var(--accent)}
+
+/* ─────────────── shell: rail + main ─────────────── */
+.shell{flex:1;display:flex;min-height:0}
+nav{width:196px;flex:none;background:var(--panel);border-right:1px solid var(--line);padding:14px 12px;
+  display:flex;flex-direction:column;gap:3px;overflow-y:auto}
+nav .navlabel{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);padding:12px 10px 6px}
+nav button.tab{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 11px;border-radius:8px;
+  color:var(--ink-dim);font-size:14px}
+nav button.tab .ico{width:18px;text-align:center;opacity:.9;font-size:15px}
+nav button.tab:hover{background:var(--panel-2);color:var(--ink)}
+nav button.tab.active{background:var(--accent-soft);color:var(--accent-ink);font-weight:500}
+nav .count{margin-left:auto;font-size:11px;font-family:var(--f-mono);color:var(--ink-faint)}
+nav .navfoot{margin-top:auto;font-size:11px;color:var(--ink-faint);padding:10px;line-height:1.5}
+
+main{flex:1;min-width:0;overflow-y:auto;overflow-x:hidden;padding:26px 30px 60px}
+.wrap{max-width:960px;margin:0 auto}
+.section-head{margin-bottom:20px}
+.section-head h2{font-family:var(--f-serif);font-size:24px}
+.section-head .lede{color:var(--ink-dim);font-size:14px;margin-top:5px;max-width:70ch}
+.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:8px}
+
+/* how-it-maps banner */
+.mapsbar{display:flex;gap:12px;align-items:flex-start;background:var(--teal-soft);border:1px solid var(--line);
+  border-left:3px solid var(--teal);border-radius:10px;padding:12px 15px;margin-bottom:20px;font-size:13px;color:var(--ink-dim);line-height:1.6}
+.mapsbar .ic{color:var(--teal);font-size:15px;flex:none;margin-top:1px}
+.mapsbar code{font-family:var(--f-mono);font-size:12px;background:var(--panel);padding:1px 5px;border-radius:4px;color:var(--teal)}
+
+/* cards / fields */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+.card + .card{margin-top:14px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.field:last-child{margin-bottom:0}
+.field label{font-size:12px;letter-spacing:.04em;color:var(--ink-dim);font-weight:500}
+.field .hint{font-size:12px;color:var(--ink-faint)}
+.maps{font-size:12px;color:var(--ink-faint);line-height:1.5;display:flex;gap:6px;align-items:baseline}
+.maps .k{color:var(--teal);font-weight:600;flex:none;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  border:1px solid var(--teal);border-radius:4px;padding:1px 5px;opacity:.9}
+.maps code{font-family:var(--f-mono);font-size:11.5px;color:var(--ink-dim);background:var(--panel-2);padding:0 4px;border-radius:4px}
+.maps b{color:var(--ink-dim);font-weight:600}
+.row{display:flex;gap:10px;align-items:center}
+.row.wrap{flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:500;
+  background:var(--accent);color:#fff;border:1px solid transparent}
+:root[data-theme="dark"] .btn{color:#1b1a12}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn{color:#1b1a12}}
+.btn:hover{filter:brightness(1.06)}
+.btn.ghost{background:transparent;color:var(--ink-dim);border-color:var(--line)}
+.btn.ghost:hover{color:var(--ink);border-color:var(--accent)}
+.btn.tiny{padding:5px 9px;font-size:12px}
+.btn.teal{background:var(--teal);color:#fff}
+:root[data-theme="dark"] .btn.teal{color:#0f1614}
+.iconbtn{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:7px;
+  color:var(--ink-faint);border:1px solid transparent;font-size:14px}
+.iconbtn:hover{background:var(--panel-2);color:var(--ink)}
+.iconbtn.danger:hover{color:var(--danger)}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:12px;
+  background:var(--panel-2);color:var(--ink-dim);border:1px solid var(--line-soft)}
+.chip.mono{font-family:var(--f-mono);font-size:11px}
+.swatch{width:14px;height:14px;border-radius:4px;border:1px solid rgba(0,0,0,.15);flex:none}
+.muted{color:var(--ink-dim)}
+.faint{color:var(--ink-faint)}
+.empty{border:1px dashed var(--line);border-radius:12px;padding:26px;text-align:center;color:var(--ink-faint);font-size:14px}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.entity{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px;display:flex;flex-direction:column;gap:9px}
+.entity .top{display:flex;align-items:center;gap:9px}
+.entity .nm{font-family:var(--f-serif);font-size:17px;font-weight:600}
+.entity textarea{min-height:44px}
+.entity .del{margin-left:auto}
+.entity .maps{margin-top:2px}
+
+/* structure outline */
+.outline{display:flex;flex-direction:column;gap:16px}
+.chapter{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.chapter .chead{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--panel-2);border-bottom:1px solid var(--line)}
+.chapter .cno{font-family:var(--f-display);font-size:14px;color:var(--accent);font-weight:600;flex:none}
+.chapter .ctitle{font-family:var(--f-serif);font-size:17px;font-weight:600;background:transparent;border:1px solid transparent;padding:4px 6px;flex:1}
+.chapter .ctitle:hover,.chapter .ctitle:focus{border-color:var(--line);background:var(--raised)}
+.chapter .cq{padding:8px 16px;font-size:13px;color:var(--ink-dim);border-bottom:1px solid var(--line-soft);display:flex;align-items:center;gap:8px}
+.chapter .cq .qlab{color:var(--teal);font-weight:600;font-size:11px;letter-spacing:.1em;text-transform:uppercase;flex:none}
+.chapter .cq input{border:1px solid transparent;background:transparent;padding:3px 6px}
+.chapter .cq input:hover,.chapter .cq input:focus{border-color:var(--line);background:var(--raised)}
+.stagelist{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.stagerow{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;border:1px solid var(--line-soft);
+  background:var(--raised);cursor:pointer}
+.stagerow:hover{border-color:var(--accent)}
+.stagerow.sel{border-color:var(--accent);background:var(--accent-soft)}
+.stagerow .sid{font-family:var(--f-mono);font-size:11px;color:var(--ink-faint);flex:none}
+.stagerow .stitle{font-family:var(--f-serif);font-size:15px;font-weight:600}
+.stagerow .ssub{font-size:12px;color:var(--ink-dim)}
+.stagerow .prog{margin-left:auto;display:flex;gap:3px;flex:none}
+.stagerow .dot{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.stagerow .dot.on{background:var(--good)}
+.stagerow .mv{display:flex;gap:2px;flex:none}
+.addstage{border:1px dashed var(--line);background:transparent;color:var(--ink-dim);border-radius:9px;padding:9px;font-size:13px;text-align:center}
+.addstage:hover{border-color:var(--accent);color:var(--ink)}
+
+/* stage detail */
+.beatsheet .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:640px){.beatsheet .field-grid{grid-template-columns:1fr}}
+.list-editor{display:flex;flex-direction:column;gap:8px}
+.li-item{display:flex;gap:8px;align-items:flex-start}
+.li-item .bullet{color:var(--accent);padding-top:9px;flex:none}
+.tag-input{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px;border:1px solid var(--line);border-radius:8px;background:var(--raised)}
+.tag-input .tag{display:inline-flex;align-items:center;gap:5px;background:var(--panel-2);border:1px solid var(--line-soft);
+  border-radius:6px;padding:3px 4px 3px 8px;font-family:var(--f-mono);font-size:12px}
+.tag-input .tag button{color:var(--ink-faint);font-size:13px;line-height:1}
+.tag-input input{border:none;background:transparent;padding:4px;width:auto;flex:1;min-width:120px}
+.tag-input input:focus{outline:none}
+
+/* dialogue editor */
+.dlg-block{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+.dlg-block + .dlg-block{margin-top:12px}
+.dlg-head{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--panel-2);border-bottom:1px solid var(--line)}
+.dlg-head .did{font-family:var(--f-mono);font-size:11px;color:var(--ink-faint)}
+.dlg-head input.dtitle{border:1px solid transparent;background:transparent;font-weight:600;font-family:var(--f-serif);padding:4px 6px}
+.dlg-head input.dtitle:hover,.dlg-head input.dtitle:focus{border-color:var(--line);background:var(--raised)}
+.lines{padding:12px 14px;display:flex;flex-direction:column;gap:9px}
+.line{display:flex;gap:9px;align-items:flex-start;padding:9px;border-radius:9px;background:var(--raised);border:1px solid var(--line-soft)}
+.line .lgut{display:flex;flex-direction:column;align-items:center;gap:3px;flex:none;padding-top:2px}
+.line .lbody{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
+.line.say .speaker-sel{max-width:170px}
+.line .prose{font-family:var(--f-serif);min-height:38px}
+.line .lctl{display:flex;flex-direction:column;gap:2px;flex:none}
+.line .kindpick{font-size:11px;max-width:96px;padding:4px 6px}
+.choice-opt{display:flex;gap:7px;align-items:center}
+.choice-opt .otext{flex:1;font-family:var(--f-serif)}
+.choice-opt .oset{max-width:160px;font-family:var(--f-mono);font-size:12px}
+.addline-bar{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 14px}
+.addline-bar button{font-size:12px;padding:5px 10px;border:1px solid var(--line);border-radius:20px;color:var(--ink-dim);background:var(--raised)}
+.addline-bar button:hover{border-color:var(--accent);color:var(--ink)}
+
+/* story writer (AI) */
+.writer{display:grid;grid-template-columns:1fr;gap:0;height:calc(100vh - 128px);grid-template-rows:1fr auto}
+.chat-scroll{overflow-y:auto;padding:6px 2px 16px;display:flex;flex-direction:column;gap:16px}
+.msg{display:flex;gap:11px;max-width:100%}
+.msg .av{width:30px;height:30px;border-radius:8px;flex:none;display:flex;align-items:center;justify-content:center;font-size:15px}
+.msg.user .av{background:var(--accent-soft);color:var(--accent-ink)}
+.msg.ai .av{background:var(--teal-soft);color:var(--teal)}
+.msg .bubble{flex:1;min-width:0}
+.msg .who{font-size:12px;color:var(--ink-faint);margin-bottom:3px}
+.msg.ai .who{color:var(--teal)}
+.msg .content{font-family:var(--f-serif);font-size:15.5px;line-height:1.72;white-space:pre-wrap;word-wrap:break-word}
+.msg .content h4{font-family:var(--f-sans);font-size:13px;letter-spacing:.04em;color:var(--ink-dim);margin:12px 0 4px}
+.msg .content code{font-family:var(--f-mono);font-size:.86em;background:var(--panel-2);padding:1px 5px;border-radius:4px}
+.msg.ai .content.streaming::after{content:"▌";color:var(--teal);animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.quickbar{display:flex;flex-wrap:wrap;gap:7px;padding:12px 0 10px}
+.quickbar .qp{font-size:12.5px;padding:6px 11px;border-radius:20px;border:1px solid var(--line);background:var(--panel);color:var(--ink-dim)}
+.quickbar .qp:hover{border-color:var(--teal);color:var(--ink)}
+.composer{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.composer .ctop{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--ink-faint);flex-wrap:wrap}
+.composer .ctx-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;background:var(--teal-soft);
+  color:var(--teal);font-size:12px}
+.composer .crow{display:flex;gap:9px;align-items:flex-end}
+.composer textarea{min-height:46px;max-height:180px;font-family:var(--f-serif)}
+.composer .send{flex:none;height:44px}
+.ai-unavail{border:1px dashed var(--line);border-radius:12px;padding:20px;color:var(--ink-dim);font-size:14px;line-height:1.6}
+
+/* export */
+.export-grid{display:grid;grid-template-columns:240px 1fr;gap:16px;height:calc(100vh - 150px)}
+@media(max-width:720px){.export-grid{grid-template-columns:1fr;height:auto}}
+.export-files{display:flex;flex-direction:column;gap:5px}
+.export-files button{display:flex;gap:9px;align-items:center;text-align:left;padding:10px 12px;border-radius:9px;
+  border:1px solid var(--line-soft);background:var(--panel);color:var(--ink-dim);font-size:13px}
+.export-files button .fn{font-family:var(--f-mono);font-size:12px}
+.export-files button:hover{border-color:var(--accent)}
+.export-files button.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
+.export-view{display:flex;flex-direction:column;min-height:0}
+.export-view .evhead{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.export-view .evhead .fname{font-family:var(--f-mono);font-size:13px;color:var(--ink-dim)}
+.export-view .evnote{font-size:12px;color:var(--ink-faint);margin-bottom:10px;line-height:1.5}
+.export-view pre{flex:1;overflow:auto;margin:0;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:16px;font-family:var(--f-mono);font-size:12.5px;line-height:1.6;color:var(--ink);white-space:pre}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;
+  background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:8px;font-size:13px;transition:.25s;z-index:50;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.modal-bg{position:fixed;inset:0;background:rgba(10,10,8,.55);display:flex;align-items:center;justify-content:center;z-index:40;padding:20px}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);width:min(520px,100%);padding:24px;max-height:86vh;overflow-y:auto}
+.modal h3{font-family:var(--f-serif);font-size:20px;margin-bottom:14px}
+.modal .mrow{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+.modal table{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0}
+.modal td{padding:6px 8px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+.modal td:first-child{white-space:nowrap;color:var(--teal);font-family:var(--f-mono);font-size:12px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<header>
+  <div class="brand">
+    <span class="mark"><span class="glyph">🏮</span>Mo</span>
+    <span class="sub">Story Studio</span>
+  </div>
+  <div class="spacer"></div>
+  <span class="save-state" id="saveState">Saved</span>
+  <button class="hbtn" id="themeBtn" title="Toggle theme">◐ Theme</button>
+  <button class="hbtn" id="helpBtn">? How it works</button>
+</header>
+
+<div class="shell">
+  <nav id="nav"></nav>
+  <main><div class="wrap" id="view"></div></main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ═══════════════════════════════════════════════════════════════════
+   Mo Story Studio — plan the game, talk it through with a story-writer
+   AI, and export engine-ready code. State autosaves to localStorage.
+   Every field shows how it maps onto the actual Three.js engine (src/).
+   ═══════════════════════════════════════════════════════════════════ */
+
+const LS_KEY = "mo.design.v2";
+const uid = (p="id") => p + "_" + Math.random().toString(36).slice(2,8);
+
+/* ── default seed (the real Mo demo, in English) ── */
+function seed(){
+  return {
+    meta:{ title:"Mo — The Forgotten Forest",
+      logline:"A nameless wanderer wakes in a forest with no memory, and gathers scattered fragments of memory to uncover the truth of a door they once locked themselves." },
+    world:[
+      "Memory exists as physical 'fragments' — collectibles are the currency of story progress.",
+      "Forgotten things drift through the forest as 'husks' — the reason enemies exist.",
+      "The lantern briefly holds memory in place — the emblem of NPCs and checkpoints."
+    ],
+    characters:[
+      { id:uid("ch"), key:"mo", name:"Mo", color:"#f1e6cf", role:"Protagonist", secret:"May be the very person who locked the door." },
+      { id:uid("ch"), key:"elder", name:"The Lantern-Keeper", color:"#e9c46a", role:"Guide", secret:"Left their name in the forest long ago." },
+      { id:uid("ch"), key:"narrator", name:"Narration", color:"#b9b3a6", role:"Voice", secret:"" },
+      { id:uid("ch"), key:"thought", name:"Mo (thought)", color:"#a7c4d8", role:"Inner voice", secret:"" }
+    ],
+    items:[
+      { id:uid("it"), key:"memory_fragment", name:"Memory Fragment", icon:"◆", color:"#7ec8e3", keyItem:false, desc:"Someone's forgotten memory. Gather enough and something may surface." },
+      { id:uid("it"), key:"old_key", name:"Rusted Key", icon:"🗝", color:"#e9c46a", keyItem:true, desc:"Corroded, but it can still open something." },
+      { id:uid("it"), key:"lantern", name:"Lantern", icon:"🏮", color:"#ffb347", keyItem:true, desc:"The old one's lantern. It pushes the dark back a little." }
+    ],
+    chapters:[
+      { id:uid("cp"), title:"Chapter 1 · The Forgotten Forest", question:"Who am I?", summary:"Mo wakes with no name and no memory, meets the Lantern-Keeper, and learns of the memory fragments.", stages:[] }
+    ],
+    stages:{},
+    _sel:null,
+    chat:[]
+  };
+}
+function seedStages(d){
+  const ch1 = d.chapters[0].id;
+  const s11 = {
+    id:"stage-1-1", chapterId:ch1, title:"Waking", subtitle:"with the smell of cold earth",
+    mood:"Night, misted conifer forest. A single shard of blue moonlight.",
+    knows:"The player remembers nothing. The only clue is the light in the east.",
+    objectives:["Head toward the light in the east","Pull the watchtower lever to open the east gate","Open the exit with the key"],
+    puzzle:"A lever atop the watchtower opens the east gate. Beyond it lies a key that unlocks the exit.",
+    enemies:"Two slimes (patrolling; killed by stomp or attack), one beetle (2 HP, cannot be stomped).",
+    collectibles:"Memory Fragment ×3 (optional), Rusted Key ×1 (required to progress).",
+    clear:"Open the exit door with the key and step through.",
+    flags:["intro_seen","met_elder","gate_1_open","got:key_1","cleared:stage-1-1"],
+    dialogues:[
+      { id:"intro_monologue", title:"Opening monologue", lines:[
+        { k:"say", speaker:"narrator", text:"The smell of cold earth. Running water somewhere far off." },
+        { k:"say", speaker:"mo", text:"…Where is this." },
+        { k:"say", speaker:"thought", text:"No name comes to mind. No yesterday.\nOnly the sense that I must go somewhere remains." }
+      ]},
+      { id:"elder_first", title:"Lantern-Keeper · first meeting", lines:[
+        { k:"say", speaker:"elder", text:"…You've woken. It's been a long time since anyone woke in this forest." },
+        { k:"say", speaker:"mo", text:"Who are you…" },
+        { k:"choice", options:[
+          { text:"Who are you?", set:"asked_who" },
+          { text:"Where am I?", set:"asked_where" },
+          { text:"(Stay silent)", set:"silent_first" }
+        ]},
+        { k:"say", speaker:"elder", text:"Your road lies beyond the east gate. But it was locked long ago." },
+        { k:"set", flag:"met_elder" }
+      ]}
+    ]
+  };
+  const s12 = {
+    id:"stage-1-2", chapterId:ch1, title:"Beyond the Gate", subtitle:"the lantern's light fell away behind",
+    mood:"A deeper, quieter forest. Cold blue tones.",
+    knows:"", objectives:["Press onward"], puzzle:"Cross the moving platform to advance.",
+    enemies:"One slime.", collectibles:"", clear:"Reach the exit (if last stage of the chapter, the ending plays).",
+    flags:["s12_intro"],
+    dialogues:[
+      { id:"stage12_intro", title:"Entry narration", lines:[
+        { k:"say", speaker:"narrator", text:"The forest past the gate was quieter still. The lantern's light fell away behind." }
+      ]}
+    ]
+  };
+  d.stages[s11.id]=s11; d.stages[s12.id]=s12;
+  d.chapters[0].stages=[s11.id,s12.id];
+  d._sel=s11.id;
+}
+
+/* ── state ── */
+let D;
+function load(){
+  try{ const raw=localStorage.getItem(LS_KEY); if(raw){ D=JSON.parse(raw); if(!D.chat)D.chat=[]; return; } }catch(e){}
+  D=seed(); seedStages(D); save(true);
+}
+let saveTimer=null, dirty=false;
+function save(immediate){
+  dirty=true; setSaveState();
+  if(immediate){ flush(); return; }
+  clearTimeout(saveTimer); saveTimer=setTimeout(flush,500);
+}
+function flush(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(D)); dirty=false; lastSaved=new Date(); setSaveState(); }
+  catch(e){ const el=document.getElementById("saveState"); el.textContent="Local save failed"; }
+}
+let lastSaved=null;
+function setSaveState(){
+  const el=document.getElementById("saveState");
+  if(dirty){ el.textContent="Saving…"; el.classList.add("dirty"); }
+  else { el.textContent = lastSaved ? "Saved "+fmtTime(lastSaved) : "Saved"; el.classList.remove("dirty"); }
+}
+function fmtTime(d){ return d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}); }
+
+/* ── DOM helpers ── */
+function h(tag, attrs={}, ...kids){
+  const e=document.createElement(tag);
+  for(const k in attrs){
+    const v=attrs[k];
+    if(k==="class") e.className=v;
+    else if(k==="html") e.innerHTML=v;
+    else if(k.startsWith("on")&&typeof v==="function") e.addEventListener(k.slice(2),v);
+    else if(v!=null&&v!==false) e.setAttribute(k,v);
+  }
+  for(const kid of kids.flat()){ if(kid==null||kid===false) continue; e.append(kid.nodeType?kid:document.createTextNode(kid)); }
+  return e;
+}
+function bindText(inputEl, obj, key){
+  inputEl.value = obj[key]||"";
+  inputEl.addEventListener("input", ()=>{ obj[key]=inputEl.value; save(); });
+  return inputEl;
+}
+function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),1900); }
+/* engine-mapping hint (accepts HTML) */
+function maps(htmlStr){ const d=h("div",{class:"maps"}); d.innerHTML='<span class="k">in&nbsp;game</span><span>'+htmlStr+'</span>'; return d; }
+/* a field with label + control + optional maps hint */
+function field(label, control, mapHtml){
+  const f=h("div",{class:"field"}, h("label",{},label), control);
+  if(mapHtml) f.append(maps(mapHtml));
+  return f;
+}
+
+/* ── navigation ── */
+const SECTIONS=[
+  { id:"overview", ico:"❦", label:"Overview" },
+  { id:"characters", ico:"☾", label:"Characters" },
+  { id:"items", ico:"◆", label:"Items" },
+  { id:"structure", ico:"❧", label:"Structure" },
+  { id:"stage", ico:"▤", label:"Stage" },
+  { id:"writer", ico:"✒", label:"Story Writer" },
+  { id:"export", ico:"⇩", label:"Export" }
+];
+let active="overview";
+function renderNav(){
+  const nav=document.getElementById("nav"); nav.innerHTML="";
+  nav.append(h("div",{class:"navlabel"},"Design"));
+  for(const s of SECTIONS){
+    const btn=h("button",{class:"tab"+(active===s.id?" active":""),onclick:()=>{active=s.id;renderAll();}},
+      h("span",{class:"ico"},s.ico), s.label);
+    let c=null;
+    if(s.id==="characters") c=D.characters.length;
+    else if(s.id==="items") c=D.items.length;
+    else if(s.id==="structure") c=D.chapters.length+" ch";
+    else if(s.id==="stage") c=Object.keys(D.stages).length;
+    if(c!=null) btn.append(h("span",{class:"count"},String(c)));
+    nav.append(btn);
+  }
+  nav.append(h("div",{class:"navfoot"},"Autosaved to this browser. Back up under Export → Design backup."));
+}
+
+/* ═══════════════ Overview ═══════════════ */
+function viewOverview(){
+  const v=document.getElementById("view"); v.innerHTML="";
+  v.append(h("div",{class:"section-head"},
+    h("div",{class:"eyebrow"},"Story Bible"), h("h2",{},"Overview"),
+    h("div",{class:"lede"},"Pin the one-line concept and the rules of the world first. This document is the compass you steer every stage by.")));
+  v.append(mapsBanner('This section is your design bible — the engine doesn\'t read it directly. The <b>title</b> names your game (title screen); the <b>world rules</b> are where each mechanic should come from.'));
+
+  const c1=h("div",{class:"card"});
+  c1.append(
+    field("Title", bindText(h("input",{type:"text",placeholder:"Game title"}),D.meta,"title"),
+      'The name shown on the title screen and browser tab.'),
+    field("Logline · one-line concept", bindText(h("textarea",{rows:"2",placeholder:"Who does what, and why — in one sentence"}),D.meta,"logline"),
+      'The compass for the whole game. If this wobbles, everything wobbles.'));
+  v.append(c1);
+
+  const c2=h("div",{class:"card"});
+  c2.append(h("div",{class:"row",style:"justify-content:space-between;margin-bottom:6px"},
+    h("h3",{style:"font-family:var(--f-serif);font-size:17px"},"World rules"),
+    h("span",{class:"faint",style:"font-size:12px"},"Only what touches play — each rule = one mechanic")));
+  c2.append(maps('e.g. "memory = fragments" → the <code>Collectible</code> entity; "husks" → <code>Enemy</code>; "lantern" → <code>Checkpoint</code>.'));
+  c2.append(h("div",{style:"height:10px"}));
+  c2.append(listEditor(D.world, "One rule per line (e.g. memory exists as fragments)", ()=>save()));
+  v.append(c2);
+
+  const stageCount=Object.keys(D.stages).length;
+  const dlgCount=Object.values(D.stages).reduce((n,s)=>n+(s.dialogues?.length||0),0);
+  const c3=h("div",{class:"card"});
+  c3.append(h("h3",{style:"font-family:var(--f-serif);font-size:17px;margin-bottom:12px"},"So far"));
+  c3.append(h("div",{class:"row wrap",style:"gap:8px"},
+    stat(D.chapters.length,"chapters"), stat(stageCount,"stages"),
+    stat(D.characters.length,"characters"), stat(D.items.length,"items"), stat(dlgCount,"dialogue scripts")));
+  v.append(c3);
+}
+function mapsBanner(htmlStr){ const d=h("div",{class:"mapsbar"}); d.innerHTML='<span class="ic">⤷</span><div>'+htmlStr+'</div>'; return d; }
+function stat(n,label){ return h("div",{class:"chip",style:"padding:8px 14px;font-size:13px"},
+  h("b",{style:"font-family:var(--f-display);font-size:18px;color:var(--accent);margin-right:2px"},String(n)), label); }
+
+function listEditor(arr, placeholder, onchange){
+  const box=h("div",{class:"list-editor"});
+  function redraw(){
+    box.innerHTML="";
+    arr.forEach((val,i)=>{
+      const ta=h("textarea",{rows:"1",placeholder}); ta.value=val;
+      ta.addEventListener("input",()=>{arr[i]=ta.value;autoGrow(ta);onchange();});
+      const del=h("button",{class:"iconbtn danger",title:"Remove",onclick:()=>{arr.splice(i,1);onchange();redraw();}},"✕");
+      box.append(h("div",{class:"li-item"}, h("span",{class:"bullet"},"—"), ta, del));
+      requestAnimationFrame(()=>autoGrow(ta));
+    });
+    box.append(h("button",{class:"btn ghost tiny",style:"align-self:flex-start;margin-top:2px",
+      onclick:()=>{arr.push("");onchange();redraw();
+        setTimeout(()=>{const tas=box.querySelectorAll("textarea");tas[tas.length-1]?.focus();},0);}},"+ Add"));
+  }
+  redraw(); return box;
+}
+function autoGrow(ta){ ta.style.height="auto"; ta.style.height=Math.max(38,ta.scrollHeight)+"px"; }
+
+/* ═══════════════ Characters ═══════════════ */
+function viewCharacters(){
+  const v=document.getElementById("view"); v.innerHTML="";
+  v.append(h("div",{class:"section-head"},
+    h("div",{class:"eyebrow"},"Cast"),
+    h("div",{class:"row",style:"justify-content:space-between;align-items:flex-end"},
+      h("div",{}, h("h2",{},"Characters"),
+        h("div",{class:"lede"},"The speakers in the dialogue box. Each one becomes an entry in the engine's character table.")),
+      h("button",{class:"btn",onclick:addCharacter},"+ Character"))));
+  v.append(mapsBanner('Exports to <code>src/story/characters.js</code> as <code>CHARACTERS = { key: { name, color } }</code>. In dialogue, <b>key</b> is the <code>speaker</code>; an NPC is placed with <code>new NPC({ dialogue: \'id\' })</code> and its lines use these speakers.'));
+  if(!D.characters.length){ v.append(h("div",{class:"empty"},"No characters yet. Add one with “+ Character”.")); return; }
+  const grid=h("div",{class:"cards"});
+  D.characters.forEach((c)=>{
+    const card=h("div",{class:"entity"});
+    card.append(
+      h("div",{class:"top"},
+        h("span",{class:"swatch",style:`background:${c.color}`}),
+        bindText(h("input",{class:"nm",style:"border:1px solid transparent;background:transparent;padding:3px 5px",placeholder:"Name"}),c,"name"),
+        h("button",{class:"iconbtn danger del",title:"Delete",onclick:()=>{
+          if(confirm(`Delete character “${c.name}”?`)){ D.characters=D.characters.filter(x=>x.id!==c.id); save(); renderAll(); }}},"✕")),
+      h("div",{class:"row"}, h("span",{class:"chip mono"},"speaker"),
+        bindText(h("input",{class:"mono",style:"font-family:var(--f-mono);font-size:12px",placeholder:"key (identifier)"}),c,"key"), colorInput(c)),
+      maps('<code>speaker: \''+(c.key||"key")+'\'</code> in dialogue lines'),
+      field("Role", bindText(h("input",{placeholder:"e.g. Guide"}),c,"role"), 'Design note only.'),
+      field("Secret · arc", bindText(h("textarea",{rows:"2",placeholder:"What this character hides or reveals"}),c,"secret"),
+        'Design note — drives branches you gate with story flags.'),
+      maps('Nameplate color in the dialogue box: <code>color: \''+(c.color||"#e9c46a")+'\'</code>'));
+    grid.append(card);
+  });
+  v.append(grid);
+}
+function colorInput(obj){
+  const wrap=h("label",{class:"chip",style:"cursor:pointer;gap:6px"},"color");
+  const inp=h("input",{type:"color",style:"width:26px;height:20px;padding:0;border:none;background:none;cursor:pointer"});
+  inp.value=obj.color||"#e9c46a";
+  inp.addEventListener("input",()=>{obj.color=inp.value;save();
+    const sw=wrap.closest(".entity")?.querySelector(".swatch"); if(sw)sw.style.background=inp.value;});
+  wrap.append(inp); return wrap;
+}
+function addCharacter(){ D.characters.push({id:uid("ch"),key:"new_char",name:"New Character",color:"#cdbfa3",role:"",secret:""});
+  save(); renderAll(); setTimeout(()=>document.querySelector(".cards .entity:last-child .nm")?.focus(),0); }
+
+/* ═══════════════ Items ═══════════════ */
+function viewItems(){
+  const v=document.getElementById("view"); v.innerHTML="";
+  v.append(h("div",{class:"section-head"},
+    h("div",{class:"eyebrow"},"Items"),
+    h("div",{class:"row",style:"justify-content:space-between;align-items:flex-end"},
+      h("div",{}, h("h2",{},"Items"),
+        h("div",{class:"lede"},"Collectibles and puzzle keys. Each becomes an entry in the engine's item table.")),
+      h("button",{class:"btn",onclick:addItem},"+ Item"))));
+  v.append(mapsBanner('Exports to <code>src/story/items.js</code> as <code>ITEMS = { key: {...} }</code>. Referenced by <code>new Collectible({ itemId })</code>, dialogue <code>give</code>, and <code>ExitDoor({ requiresItem })</code>. Counts mirror into a <code>item:&lt;key&gt;</code> story flag you can test in conditions.'));
+  if(!D.items.length){ v.append(h("div",{class:"empty"},"No items yet.")); return; }
+  const grid=h("div",{class:"cards"});
+  D.items.forEach((it)=>{
+    const card=h("div",{class:"entity"});
+    card.append(
+      h("div",{class:"top"},
+        h("input",{value:it.icon,maxlength:"2",style:"width:44px;text-align:center;font-size:20px;flex:none",
+          oninput:e=>{it.icon=e.target.value;save();}}),
+        bindText(h("input",{class:"nm",style:"border:1px solid transparent;background:transparent;padding:3px 5px",placeholder:"Name"}),it,"name"),
+        h("button",{class:"iconbtn danger del",onclick:()=>{ if(confirm(`Delete item “${it.name}”?`)){D.items=D.items.filter(x=>x.id!==it.id);save();renderAll();} }},"✕")),
+      h("div",{class:"row"}, h("span",{class:"chip mono"},"key"),
+        bindText(h("input",{style:"font-family:var(--f-mono);font-size:12px",placeholder:"key (identifier)"}),it,"key"), colorInput(it)),
+      maps('<code>new Collectible({ itemId: \''+(it.key||"key")+'\' })</code> · icon shown in the HUD'),
+      h("label",{class:"row",style:"gap:7px;font-size:13px;color:var(--ink-dim);cursor:pointer"},
+        checkbox(it,"keyItem"), "Key item (always shown in the HUD)"),
+      field("Description", bindText(h("textarea",{rows:"2",placeholder:"What it is, and what it hints at"}),it,"desc"),
+        'Tooltip text on the HUD item.'));
+    grid.append(card);
+  });
+  v.append(grid);
+}
+function checkbox(obj,key){ const c=h("input",{type:"checkbox",style:"width:auto"}); c.checked=!!obj[key];
+  c.addEventListener("change",()=>{obj[key]=c.checked;save();}); return c; }
+function addItem(){ D.items.push({id:uid("it"),key:"new_item",name:"New Item",icon:"◆",color:"#7ec8e3",keyItem:false,desc:""});
+  save(); renderAll(); setTimeout(()=>document.querySelector(".cards .entity:last-child .nm")?.focus(),0); }
+
+/* ═══════════════ Structure ═══════════════ */
+function viewStructure(){
+  const v=document.getElementById("view"); v.innerHTML="";
+  v.append(h("div",{class:"section-head"},
+    h("div",{class:"eyebrow"},"Structure"),
+    h("div",{class:"row",style:"justify-content:space-between;align-items:flex-end"},
+      h("div",{}, h("h2",{},"Structure"),
+        h("div",{class:"lede"},"The order of chapters is the flow of the game. One chapter = one question. Click a stage to edit its detail.")),
+      h("button",{class:"btn",onclick:addChapter},"+ Chapter"))));
+  v.append(mapsBanner('Exports to <code>src/story/chapters.js</code>. The engine plays stages in this exact order; when a stage calls <code>this.complete()</code> it loads the next one, and the last stage triggers the ending. Register each stage class in <code>src/stages/index.js</code>.'));
+  const outline=h("div",{class:"outline"});
+  D.chapters.forEach((cp,ci)=>{
+    const block=h("div",{class:"chapter"});
+    block.append(
+      h("div",{class:"chead"},
+        h("span",{class:"cno"},"Ch "+(ci+1)),
+        bindText(h("input",{class:"ctitle",placeholder:"Chapter title"}),cp,"title"),
+        moveBtns(D.chapters,ci,()=>{save();viewStructure();}),
+        h("button",{class:"iconbtn danger",title:"Delete chapter",onclick:()=>delChapter(cp)},"✕")),
+      h("div",{class:"cq"}, h("span",{class:"qlab"},"Question"),
+        bindText(h("input",{placeholder:"The question this chapter poses (e.g. Who am I?)"}),cp,"question")),
+      h("div",{class:"cq",style:"border-bottom:none"}, h("span",{class:"qlab",style:"color:var(--ink-faint)"},"Summary"),
+        bindText(h("input",{placeholder:"A sentence or two"}),cp,"summary")));
+    const list=h("div",{class:"stagelist"});
+    (cp.stages||[]).forEach((sid,si)=>{
+      const s=D.stages[sid]; if(!s) return;
+      const filled=stageProgress(s);
+      list.append(h("div",{class:"stagerow"+(D._sel===sid?" sel":""),onclick:(e)=>{
+          if(e.target.closest(".mv")) return; D._sel=sid; save(); active="stage"; renderAll(); }},
+        h("span",{class:"sid"},sid),
+        h("div",{style:"flex:1;min-width:0"},
+          h("div",{class:"stitle"},s.title||"(untitled)"),
+          s.subtitle?h("div",{class:"ssub"},s.subtitle):null),
+        h("div",{class:"prog",title:filled+"/6 fields filled"},
+          ...Array.from({length:6},(_,k)=>h("span",{class:"dot"+(k<filled?" on":"")}))),
+        h("div",{class:"mv"},
+          moveBtns(cp.stages,si,()=>{save();viewStructure();},true),
+          h("button",{class:"iconbtn danger",title:"Delete stage",onclick:(e)=>{e.stopPropagation();delStage(cp,sid);}},"✕"))));
+    });
+    list.append(h("button",{class:"addstage",onclick:()=>addStage(cp)},"+ Add stage"));
+    block.append(list); outline.append(block);
+  });
+  v.append(outline);
+}
+function stageProgress(s){
+  let n=0;
+  if(s.mood) n++; if((s.objectives||[]).length) n++; if(s.puzzle) n++;
+  if(s.enemies||s.collectibles) n++; if(s.clear) n++; if((s.dialogues||[]).some(d=>d.lines.length)) n++;
+  return n;
+}
+function moveBtns(arr,i,after){
+  const up=h("button",{class:"iconbtn",title:"Move up",onclick:(e)=>{e.stopPropagation();if(i>0){[arr[i-1],arr[i]]=[arr[i],arr[i-1]];after();}}},"↑");
+  const dn=h("button",{class:"iconbtn",title:"Move down",onclick:(e)=>{e.stopPropagation();if(i<arr.length-1){[arr[i+1],arr[i]]=[arr[i],arr[i+1]];after();}}},"↓");
+  if(i===0) up.style.opacity=".3"; if(i===arr.length-1) dn.style.opacity=".3";
+  return h("span",{class:"row",style:"gap:0"},up,dn);
+}
+function addChapter(){ D.chapters.push({id:uid("cp"),title:"Chapter "+(D.chapters.length+1)+" · New Chapter",question:"",summary:"",stages:[]}); save(); viewStructure(); }
+function delChapter(cp){
+  if(cp.stages.length && !confirm(`Delete “${cp.title}” and its ${cp.stages.length} stage(s)?`)) return;
+  cp.stages.forEach(sid=>delete D.stages[sid]);
+  D.chapters=D.chapters.filter(c=>c.id!==cp.id); save(); renderAll();
+}
+function nextStageId(cp){ const ci=D.chapters.indexOf(cp)+1; let n=cp.stages.length+1, id;
+  do{ id=`stage-${ci}-${n}`; n++; }while(D.stages[id]); return id; }
+function addStage(cp){
+  const id=nextStageId(cp);
+  D.stages[id]={ id, chapterId:cp.id, title:"New Stage", subtitle:"", mood:"", knows:"",
+    objectives:[], puzzle:"", enemies:"", collectibles:"", clear:"", flags:[], dialogues:[] };
+  cp.stages.push(id); D._sel=id; save(); active="stage"; renderAll();
+}
+function delStage(cp,sid){
+  const s=D.stages[sid];
+  if(!confirm(`Delete stage “${s.title}” (${sid})?`)) return;
+  cp.stages=cp.stages.filter(x=>x!==sid); delete D.stages[sid];
+  if(D._sel===sid) D._sel=cp.stages[0]||Object.keys(D.stages)[0]||null;
+  save(); renderAll();
+}
+
+/* ═══════════════ Stage detail ═══════════════ */
+function viewStage(){
+  const v=document.getElementById("view"); v.innerHTML="";
+  const sid=D._sel; const s=sid?D.stages[sid]:null;
+  if(!s){ v.append(h("div",{class:"section-head"},h("h2",{},"Stage")),
+    h("div",{class:"empty"},"Pick a stage in Structure to edit it.")); return; }
+  const cp=D.chapters.find(c=>c.id===s.chapterId);
+  v.append(h("div",{class:"section-head"},
+    h("div",{class:"eyebrow"},(cp?cp.title:"")+" · Beat sheet"),
+    h("div",{class:"row",style:"justify-content:space-between;align-items:flex-end"},
+      h("div",{}, h("div",{class:"row",style:"gap:8px;align-items:baseline"},
+          h("span",{class:"chip mono"},s.id),
+          h("h2",{style:"font-family:var(--f-serif)"},s.title||"(untitled)")),
+        h("div",{class:"lede",style:"margin-top:4px"},"What the player does here, and why. Everything you fill in becomes the design comments + scaffold in the exported stage class.")),
+      h("div",{class:"row"},
+        h("button",{class:"btn ghost tiny",onclick:()=>{active="structure";renderAll();}},"← Structure"),
+        h("button",{class:"btn teal tiny",onclick:()=>askAboutStage(s)},"✒ Ask the writer")))));
+  v.append(mapsBanner('This stage becomes a <code>Stage</code> subclass in <code>src/stages/</code> (see Export). <b>Title/subtitle</b> → <code>static meta</code> (shown on the title card); <b>mood</b> → <code>static env</code>; the rest become <code>build()</code> scaffolding and comments.'));
+
+  const bs=h("div",{class:"card beatsheet"});
+  bs.append(
+    h("div",{class:"field-grid",style:"margin-bottom:16px"},
+      field("Title", bindText(h("input",{placeholder:"Stage title"}),s,"title"), '<code>static meta.title</code>'),
+      field("Subtitle (title card)", bindText(h("input",{placeholder:"Subtitle"}),s,"subtitle"), '<code>static meta.subtitle</code>')),
+    field("Mood · env", bindText(h("textarea",{rows:"2",placeholder:"Time of day, palette, weather — e.g. night, fog, blue tones"}),s,"mood"),
+      '<code>static env = { sky, fog, sun }</code> — sets lighting & atmosphere'),
+    field("What the player knows / doesn't", bindText(h("textarea",{rows:"2",placeholder:"Information the hero has and lacks at this point"}),s,"knows"),
+      'Design note → becomes a <code>// [context]</code> comment in the scaffold'),
+    field("Objective arc", listEditor(s.objectives,"Objectives in order (A → B → C)",()=>save()),
+      'Each → <code>this.setObjective(text)</code> (HUD). Advance it from dialogue with <code>{ emit: \'story:objective\' }</code>'),
+    h("div",{class:"field-grid",style:"margin-bottom:16px"},
+      field("Puzzle", bindText(h("textarea",{rows:"3",placeholder:"What, and why (story reason)"}),s,"puzzle"),
+        'Build with <code>Lever</code> + <code>Gate</code>, or <code>Trigger</code>'),
+      field("Enemies", bindText(h("textarea",{rows:"3",placeholder:"Types, placement intent"}),s,"enemies"),
+        '<code>new Enemy({ patrol })</code> / <code>Beetle</code>')),
+    h("div",{class:"field-grid",style:"margin-bottom:16px"},
+      field("Collectibles", bindText(h("textarea",{rows:"2",placeholder:"What & how many — what each hints at"}),s,"collectibles"),
+        '<code>new Collectible({ itemId, uid })</code>'),
+      field("Clear condition", bindText(h("textarea",{rows:"2",placeholder:"What advances to the next stage"}),s,"clear"),
+        '<code>ExitDoor</code> or call <code>this.complete()</code>')),
+    field("Flags left behind (read by later stages)", tagInput(s.flags,"Type a flag, press Enter (e.g. met_elder)"),
+      '<code>game.story</code> flags — the glue for branching & progress across stages'));
+  v.append(bs);
+
+  v.append(h("div",{class:"row",style:"justify-content:space-between;align-items:center;margin:22px 0 6px"},
+    h("h3",{style:"font-family:var(--f-serif);font-size:19px"},"Dialogue"),
+    h("button",{class:"btn tiny",onclick:()=>addDialogue(s)},"+ Dialogue script")));
+  v.append(maps('Exports into <code>src/story/dialogues/</code>. Attach to an NPC with <code>new NPC({ dialogue: \'&lt;id&gt;\' })</code>, or play from a cutscene with <code>cs.say(\'&lt;id&gt;\')</code>.'));
+  v.append(h("div",{style:"height:12px"}));
+  if(!s.dialogues.length) v.append(h("div",{class:"empty"},"No dialogue yet. Add NPC talks, monologues, or sign text."));
+  s.dialogues.forEach((dlg)=>v.append(dialogueBlock(s,dlg)));
+}
+function tagInput(arr, placeholder){
+  const box=h("div",{class:"tag-input"});
+  const inp=h("input",{placeholder});
+  function redraw(){
+    box.querySelectorAll(".tag").forEach(t=>t.remove());
+    arr.forEach((t,i)=>{
+      const tag=h("span",{class:"tag"},t,h("button",{title:"Remove",onclick:()=>{arr.splice(i,1);save();redraw();}},"✕"));
+      box.insertBefore(tag,inp);
+    });
+  }
+  box.append(inp);
+  inp.addEventListener("keydown",(e)=>{
+    if(e.key==="Enter"&&inp.value.trim()){ e.preventDefault(); arr.push(inp.value.trim()); inp.value=""; save(); redraw(); }
+    else if(e.key==="Backspace"&&!inp.value&&arr.length){ arr.pop(); save(); redraw(); }
+  });
+  redraw(); return box;
+}
+
+const LINE_KINDS=[["say","Line"],["choice","Choice"],["set","Flag"],["give","Item"],["wait","Pause"]];
+function dialogueBlock(stage, dlg){
+  const block=h("div",{class:"dlg-block"});
+  block.append(h("div",{class:"dlg-head"},
+    h("span",{class:"did"},"id"),
+    bindText(h("input",{class:"did",style:"font-family:var(--f-mono);font-size:12px;max-width:170px",placeholder:"dialogue_id"}),dlg,"id"),
+    bindText(h("input",{class:"dtitle",placeholder:"Note / title"}),dlg,"title"),
+    h("button",{class:"iconbtn danger",title:"Delete this script",onclick:()=>{
+      if(confirm("Delete this dialogue script?")){ stage.dialogues=stage.dialogues.filter(x=>x!==dlg); save(); viewStage(); }}},"✕")));
+  const lines=h("div",{class:"lines"});
+  dlg.lines.forEach((ln,i)=>lines.append(lineRow(stage,dlg,ln,i)));
+  block.append(lines, h("div",{class:"addline-bar"},
+    ...LINE_KINDS.map(([k,label])=>h("button",{onclick:()=>{ dlg.lines.push(newLine(k)); save(); viewStage(); }},"+ "+label))));
+  return block;
+}
+function newLine(k){
+  if(k==="say") return {k:"say",speaker:"narrator",text:""};
+  if(k==="choice") return {k:"choice",options:[{text:"",set:""},{text:"",set:""}]};
+  if(k==="set") return {k:"set",flag:""};
+  if(k==="give") return {k:"give",item:D.items[0]?.key||""};
+  if(k==="wait") return {k:"wait",sec:0.5};
+  return {k:"say",speaker:"",text:""};
+}
+function lineRow(stage,dlg,ln,i){
+  const row=h("div",{class:"line "+ln.k});
+  const kindSel=h("select",{class:"kindpick"});
+  LINE_KINDS.forEach(([k,label])=>{ const o=h("option",{value:k},label); if(k===ln.k)o.selected=true; kindSel.append(o); });
+  kindSel.addEventListener("change",()=>{ Object.assign(clearLine(ln), newLine(kindSel.value)); save(); viewStage(); });
+  const body=h("div",{class:"lbody"});
+  if(ln.k==="say"){
+    const sel=h("select",{class:"speaker-sel"});
+    sel.append(h("option",{value:""},"— Narration —"));
+    D.characters.forEach(c=>{ const o=h("option",{value:c.key},`${c.name} (${c.key})`); if(c.key===ln.speaker)o.selected=true; sel.append(o); });
+    if(ln.speaker && !D.characters.some(c=>c.key===ln.speaker)){ const o=h("option",{value:ln.speaker},ln.speaker+" (undefined)"); o.selected=true; sel.append(o); }
+    sel.addEventListener("change",()=>{ln.speaker=sel.value;save();});
+    const ta=h("textarea",{class:"prose",rows:"2",placeholder:"Line / narration…  {flag} and {character_key} are auto-substituted"});
+    ta.value=ln.text||""; ta.addEventListener("input",()=>{ln.text=ta.value;autoGrow(ta);save();});
+    body.append(sel,ta); requestAnimationFrame(()=>autoGrow(ta));
+  } else if(ln.k==="choice"){
+    body.append(h("div",{class:"faint",style:"font-size:11px"},"Choice — optional flag set when the player picks it → exports as { choice: [...] }"));
+    ln.options.forEach((op,oi)=>{
+      const t=h("input",{class:"otext",placeholder:"Choice text"}); t.value=op.text||"";
+      t.addEventListener("input",()=>{op.text=t.value;save();});
+      const st=h("input",{class:"oset",placeholder:"set flag (optional)"}); st.value=op.set||"";
+      st.addEventListener("input",()=>{op.set=st.value;save();});
+      body.append(h("div",{class:"choice-opt"}, h("span",{class:"faint"},"›"), t, st,
+        h("button",{class:"iconbtn danger",onclick:()=>{ln.options.splice(oi,1);save();viewStage();}},"✕")));
+    });
+    body.append(h("button",{class:"btn ghost tiny",style:"align-self:flex-start",onclick:()=>{ln.options.push({text:"",set:""});save();viewStage();}},"+ Choice"));
+  } else if(ln.k==="set"){
+    const inp=h("input",{class:"mono",style:"font-family:var(--f-mono);font-size:13px",placeholder:"flag to set (e.g. met_elder or !flag)"});
+    inp.value=ln.flag||""; inp.addEventListener("input",()=>{ln.flag=inp.value;save();});
+    body.append(h("div",{class:"row"},h("span",{class:"chip"},"set flag"),inp));
+  } else if(ln.k==="give"){
+    const sel=h("select",{});
+    D.items.forEach(it=>{const o=h("option",{value:it.key},`${it.icon} ${it.name} (${it.key})`);if(it.key===ln.item)o.selected=true;sel.append(o);});
+    sel.addEventListener("change",()=>{ln.item=sel.value;save();});
+    body.append(h("div",{class:"row"},h("span",{class:"chip"},"give item"),sel));
+  } else if(ln.k==="wait"){
+    const inp=h("input",{type:"number",step:"0.1",min:"0",style:"max-width:110px"}); inp.value=ln.sec??0.5;
+    inp.addEventListener("input",()=>{ln.sec=parseFloat(inp.value)||0;save();});
+    body.append(h("div",{class:"row"},h("span",{class:"chip"},"pause"),inp,h("span",{class:"faint"},"seconds")));
+  }
+  row.append(h("div",{class:"lgut"}, kindSel), body,
+    h("div",{class:"lctl"},
+      h("button",{class:"iconbtn",title:"Move up",onclick:()=>{if(i>0){[dlg.lines[i-1],dlg.lines[i]]=[dlg.lines[i],dlg.lines[i-1]];save();viewStage();}}},"↑"),
+      h("button",{class:"iconbtn",title:"Move down",onclick:()=>{if(i<dlg.lines.length-1){[dlg.lines[i+1],dlg.lines[i]]=[dlg.lines[i],dlg.lines[i+1]];save();viewStage();}}},"↓"),
+      h("button",{class:"iconbtn danger",title:"Delete",onclick:()=>{dlg.lines.splice(i,1);save();viewStage();}},"✕")));
+  return row;
+}
+function clearLine(ln){ for(const k in ln) delete ln[k]; return ln; }
+function addDialogue(s){ s.dialogues.push({ id:uid("dlg"), title:"New dialogue", lines:[{k:"say",speaker:"",text:""}] }); save(); viewStage(); }
+
+/* ═══════════════ Story Writer (AI) ═══════════════ */
+let sampleAPI=undefined, aiBusy=false, aiAbort=null;
+async function ensureSample(){
+  if(sampleAPI!==undefined) return sampleAPI;
+  try{ sampleAPI = (window.claude&&claude.use) ? await claude.use("sample") : null; }
+  catch(e){ sampleAPI=null; }
+  return sampleAPI;
+}
+const QUICK_PROMPTS=[
+  "Critique the current structure and name the single weakest link.",
+  "Give 3 next-beat ideas for the selected stage, each in a different tone.",
+  "Rewrite this stage's dialogue in a more restrained, natural voice.",
+  "Suggest how to pay off the Lantern-Keeper's secret later in the story.",
+  "Design a closing beat that answers Chapter 1's question.",
+  "Sketch the concept and a new mechanic for Chapter 2."
+];
+function viewWriter(){
+  const v=document.getElementById("view"); v.innerHTML="";
+  v.append(h("div",{class:"section-head",style:"margin-bottom:10px"},
+    h("div",{class:"eyebrow",style:"color:var(--teal)"},"Story Writer"),
+    h("div",{class:"row",style:"justify-content:space-between;align-items:flex-end"},
+      h("div",{}, h("h2",{},"Story Writer"),
+        h("div",{class:"lede"},"A dramaturg that reads your current design. Every question automatically includes the open stage and the outline. Replies in your language.")),
+      h("button",{class:"btn ghost tiny",onclick:()=>{ if(confirm("Clear the conversation?")){D.chat=[];save();viewWriter();} }},"Clear chat"))));
+
+  const wrap=h("div",{class:"writer"});
+  const scroll=h("div",{class:"chat-scroll",id:"chatScroll"});
+  if(!D.chat.length){
+    scroll.append(h("div",{class:"msg ai"}, h("div",{class:"av"},"✒"),
+      h("div",{class:"bubble"}, h("div",{class:"who"},"Story Writer"),
+        h("div",{class:"content"},"Let's build Mo's story together. Ask about the world, characters, stages, or dialogue.\nUse a quick question below, or ask about the stage you're editing — it's attached automatically."))));
+  }
+  D.chat.forEach(m=>scroll.append(msgEl(m.role,m.content)));
+
+  const composer=h("div",{class:"composer"});
+  const sel=D._sel?D.stages[D._sel]:null;
+  composer.append(
+    h("div",{class:"quickbar"}, ...QUICK_PROMPTS.map(q=>h("button",{class:"qp",onclick:()=>sendToWriter(q)},q))),
+    h("div",{class:"ctop"}, h("span",{class:"ctx-pill"},"◆ context: "+(sel?`stage ${sel.id}`:"full outline")),
+      h("span",{},"— your current design is attached to every question")));
+  const ta=h("textarea",{id:"aiInput",rows:"2",placeholder:"Ask the writer…  (Enter to send, Shift+Enter for a new line)"});
+  ta.addEventListener("keydown",(e)=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); const val=ta.value.trim(); if(val){ta.value="";sendToWriter(val);} } });
+  composer.append(h("div",{class:"crow"},ta,h("button",{class:"btn teal send",id:"aiSend",onclick:()=>{const val=ta.value.trim();if(val){ta.value="";sendToWriter(val);}}},"Send")));
+  wrap.append(scroll,composer); v.append(wrap);
+  ensureSample().then(api=>{
+    if(api===null && document.getElementById("chatScroll")){
+      scroll.append(h("div",{class:"ai-unavail"},
+        h("b",{},"The Story Writer isn't available here."),
+        h("div",{style:"margin-top:6px"},"It runs when this tool is opened as a published Artifact on claude.ai. On a local file or an unpublished copy, editing and export still work.")));
+    }
+  });
+  scrollChatToEnd();
+}
+function msgEl(role,content){
+  const isAI=role==="assistant";
+  return h("div",{class:"msg "+(isAI?"ai":"user")},
+    h("div",{class:"av"}, isAI?"✒":"You"),
+    h("div",{class:"bubble"}, h("div",{class:"who"}, isAI?"Story Writer":"You"),
+      h("div",{class:"content",html:mdLite(content)})));
+}
+function mdLite(t){
+  const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  return esc(t).replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>").replace(/^###?\s+(.+)$/gm,"<h4>$1</h4>");
+}
+function scrollChatToEnd(){ const s=document.getElementById("chatScroll"); if(s) s.scrollTop=s.scrollHeight; }
+function askAboutStage(s){
+  active="writer"; renderAll();
+  setTimeout(()=>sendToWriter(`Review the stage I'm editing, "${s.title}" (${s.id}). Check the beat sheet and dialogue, and give concrete suggestions to make it stronger dramatically.`),40);
+}
+function buildContext(focusStage){
+  const L=[];
+  L.push(`# Game: ${D.meta.title||"(untitled)"}`);
+  if(D.meta.logline) L.push(`Logline: ${D.meta.logline}`);
+  if(D.world.filter(Boolean).length){ L.push(`World rules:`); D.world.filter(Boolean).forEach(w=>L.push(`  - ${w}`)); }
+  if(D.characters.length){ L.push(`Characters:`); D.characters.forEach(c=>L.push(`  - ${c.name}(${c.key})${c.role?` · ${c.role}`:""}${c.secret?` · secret: ${c.secret}`:""}`)); }
+  L.push(`Structure:`);
+  D.chapters.forEach((cp,i)=>{
+    L.push(`  Ch${i+1} ${cp.title}${cp.question?` — question: ${cp.question}`:""}`);
+    (cp.stages||[]).forEach(sid=>{ const s=D.stages[sid]; if(!s)return;
+      L.push(`    · ${s.id} ${s.title}${s.subtitle?` (${s.subtitle})`:""}`);
+      const bits=[]; if(s.mood)bits.push(`mood:${s.mood}`); if(s.puzzle)bits.push(`puzzle:${s.puzzle}`);
+      if(s.enemies)bits.push(`enemies:${s.enemies}`); if(s.clear)bits.push(`clear:${s.clear}`);
+      if(bits.length) L.push(`        ${bits.join(" / ")}`);
+    });
+  });
+  if(focusStage){
+    const s=focusStage;
+    L.push(``,`── Focused stage: ${s.id} ${s.title} ──`);
+    if(s.mood)L.push(`Mood: ${s.mood}`);
+    if(s.knows)L.push(`Knows/doesn't: ${s.knows}`);
+    if((s.objectives||[]).filter(Boolean).length)L.push(`Objectives: ${s.objectives.filter(Boolean).join(" → ")}`);
+    if(s.puzzle)L.push(`Puzzle: ${s.puzzle}`);
+    if(s.collectibles)L.push(`Collectibles: ${s.collectibles}`);
+    if(s.clear)L.push(`Clear: ${s.clear}`);
+    (s.dialogues||[]).forEach(dlg=>{
+      if(!dlg.lines.length) return;
+      L.push(``,`[dialogue: ${dlg.title||dlg.id}]`);
+      dlg.lines.forEach(ln=>{
+        if(ln.k==="say"){ const nm=D.characters.find(c=>c.key===ln.speaker)?.name||ln.speaker||"Narration"; L.push(`${nm}: ${ln.text}`); }
+        else if(ln.k==="choice") L.push(`(choices: ${ln.options.map(o=>o.text).filter(Boolean).join(" / ")})`);
+        else if(ln.k==="set") L.push(`(flag ${ln.flag})`);
+        else if(ln.k==="give") L.push(`(give ${ln.item})`);
+      });
+    });
+  }
+  return L.join("\n");
+}
+const AI_FRAMING = "You are the story writer and dramaturg for 'Mo', a 2.5D side-scrolling, story-driven game in the dark, lyrical fable tone of LIMBO and INSIDE. "+
+  "Reply in the same language the user writes in. Be concise, concrete, and immediately actionable — lead with the point, no long preamble. "+
+  "Keep suggestions consistent with the game's world, characters, and existing dialogue, and show real example lines or stage beats when useful.";
+
+async function sendToWriter(userMsg){
+  if(aiBusy){ toast("The writer is still replying"); return; }
+  const api=await ensureSample();
+  D.chat.push({role:"user",content:userMsg}); save();
+  const scroll=document.getElementById("chatScroll");
+  if(scroll){ scroll.querySelector(".ai-unavail")?.remove(); scroll.append(msgEl("user",userMsg)); }
+  if(!api){
+    const msg="The writer AI isn't available here. Open this tool as a published Artifact on claude.ai to enable it.";
+    D.chat.push({role:"assistant",content:msg}); save(); scroll?.append(msgEl("assistant",msg)); scrollChatToEnd(); return;
+  }
+  aiBusy=true; setAiBusy(true);
+  const context=buildContext(D._sel?D.stages[D._sel]:null);
+  const aiMsg=h("div",{class:"msg ai"},h("div",{class:"av"},"✒"),
+    h("div",{class:"bubble"},h("div",{class:"who"},"Story Writer"),
+      h("div",{class:"content streaming",id:"aiStream"},"…thinking")));
+  scroll?.append(aiMsg); scrollChatToEnd();
+  const streamEl=aiMsg.querySelector("#aiStream");
+  const history=D.chat.slice(0,-1).slice(-8).map(m=>({role:m.role,content:m.content}));
+  const input=[
+    {role:"user",content:AI_FRAMING+"\n\n[current design]\n"+context},
+    {role:"assistant",content:"Understood — I've read the current design. What shall we work on?"},
+    ...history,
+    {role:"user",content:userMsg}
+  ];
+  aiAbort=new AbortController();
+  let finalText="";
+  try{
+    const {text}=await api(input,{ modelTier:"default", cache:false, signal:aiAbort.signal,
+      onText:({text})=>{ finalText=text; streamEl.className="content streaming"; streamEl.innerHTML=mdLite(text); scrollChatToEnd(); } });
+    finalText=text||finalText;
+    streamEl.className="content"; streamEl.innerHTML=mdLite(finalText);
+    D.chat.push({role:"assistant",content:finalText}); save();
+  }catch(e){
+    let m;
+    if(e&&e.code==="cancelled") m=(finalText?finalText+"\n\n":"")+"(stopped)";
+    else if(e&&e.code==="not_granted") m="Writer access wasn't granted. Open this tool on claude.ai and allow it.";
+    else if(e&&e.code==="rate_limited") m="Too many requests just now. Try again in a moment.";
+    else m=(e&&e.text)?e.text+"\n\n(the reply was cut off)":"Couldn't get a reply. Try again in a moment.";
+    streamEl.className="content"; streamEl.innerHTML=mdLite(m);
+    D.chat.push({role:"assistant",content:m}); save();
+  }finally{ aiBusy=false; setAiBusy(false); aiAbort=null; scrollChatToEnd(); }
+}
+function setAiBusy(b){
+  const btn=document.getElementById("aiSend"); if(!btn) return;
+  if(b){ btn.textContent="Stop"; btn.onclick=()=>aiAbort?.abort(); btn.classList.remove("teal"); btn.classList.add("ghost"); }
+  else { btn.textContent="Send"; btn.classList.add("teal"); btn.classList.remove("ghost");
+    btn.onclick=()=>{const ta=document.getElementById("aiInput");const val=ta.value.trim();if(val){ta.value="";sendToWriter(val);}}; }
+}
+
+/* ═══════════════ Export ═══════════════ */
+let exportSel="chapters";
+function viewExport(){
+  const v=document.getElementById("view"); v.innerHTML="";
+  v.append(h("div",{class:"section-head"},
+    h("div",{class:"eyebrow"},"Export"), h("h2",{},"Export"),
+    h("div",{class:"lede"},"Turn the design into real engine files. Copy each into the matching location in the project. Full JSON backup lives here too.")));
+  const files=exportFiles();
+  const grid=h("div",{class:"export-grid"});
+  const listCol=h("div",{class:"export-files"});
+  files.forEach(f=>{
+    listCol.append(h("button",{class:exportSel===f.key?"active":"",onclick:()=>{exportSel=f.key;viewExport();}},
+      h("span",{},f.icon), h("div",{style:"display:flex;flex-direction:column;gap:1px"},
+        h("span",{class:"fn"},f.name), h("span",{class:"faint",style:"font-size:11px"},f.where))));
+  });
+  listCol.append(h("div",{style:"height:8px"}));
+  listCol.append(h("button",{class:exportSel==="backup"?"active":"",onclick:()=>{exportSel="backup";viewExport();}},
+    h("span",{},"⛃"), h("div",{style:"display:flex;flex-direction:column;gap:1px"},
+      h("span",{class:"fn"},"Design backup"), h("span",{class:"faint",style:"font-size:11px"},"mo-design.json"))));
+
+  const viewCol=h("div",{class:"export-view"});
+  if(exportSel==="backup"){ viewCol.append(backupPanel()); }
+  else {
+    const f=files.find(x=>x.key===exportSel)||files[0];
+    const code=f.gen();
+    viewCol.append(
+      h("div",{class:"evhead"},
+        h("span",{class:"fname"},f.where+f.name),
+        h("div",{style:"flex:1"}),
+        h("button",{class:"btn ghost tiny",onclick:()=>copyText(code)},"Copy"),
+        h("button",{class:"btn tiny",onclick:()=>downloadText(f.name,code)},"Save file")),
+      h("div",{class:"evnote"},f.note),
+      h("pre",{},code));
+  }
+  grid.append(listCol,viewCol); v.append(grid);
+}
+function exportFiles(){
+  return [
+    { key:"chapters", name:"chapters.js", where:"src/story/", icon:"❧", gen:genChapters,
+      note:"The stage order & chapter data. Replaces src/story/chapters.js." },
+    { key:"characters", name:"characters.js", where:"src/story/", icon:"☾", gen:genCharacters,
+      note:"Dialogue speakers. Replaces src/story/characters.js." },
+    { key:"items", name:"items.js", where:"src/story/", icon:"◆", gen:genItems,
+      note:"Item definitions. Replaces src/story/items.js." },
+    { key:"dialogues", name:"dialogues.js", where:"src/story/dialogues/", icon:"✒", gen:genDialogues,
+      note:"All dialogue scripts. Split per chapter if you like; register via dialogues/index.js." },
+    { key:"stages", name:"(stage skeletons)", where:"src/stages/", icon:"▤", gen:genStages,
+      note:"One Stage class per stage — beat sheet moved into comments, with TODOs for terrain & entities. Save each under src/stages/<chapter>/ and register in stages/index.js." }
+  ];
+}
+function jsStr(s){ return "'"+String(s||"").replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/\n/g,"\\n")+"'"; }
+function genChapters(){
+  let o="// Generated by Mo Story Studio\n// → src/story/chapters.js\nexport const CHAPTERS = [\n";
+  D.chapters.forEach(cp=>{
+    o+="  {\n";
+    o+=`    id: ${jsStr(slugify(cp.title)||cp.id)},\n`;
+    o+=`    title: ${jsStr(cp.title)},\n`;
+    if(cp.question) o+=`    question: ${jsStr(cp.question)},\n`;
+    if(cp.summary) o+=`    summary: ${jsStr(cp.summary)},\n`;
+    o+=`    stages: [${cp.stages.map(jsStr).join(", ")}],\n  },\n`;
+  });
+  return o+"];\n";
+}
+function genCharacters(){
+  let o="// Generated by Mo Story Studio\n// → src/story/characters.js\nexport const CHARACTERS = {\n";
+  D.characters.forEach(c=>{ o+=`  ${c.key}: { name: ${jsStr(c.name)}, color: ${jsStr(c.color)} },`;
+    o+= (c.role||c.secret) ? `   // ${c.role||""}${c.secret?" · "+c.secret:""}\n` : "\n"; });
+  return o+"};\n";
+}
+function genItems(){
+  let o="// Generated by Mo Story Studio\n// → src/story/items.js\nexport const ITEMS = {\n";
+  D.items.forEach(it=>{
+    const parts=[`name: ${jsStr(it.name)}`,`icon: ${jsStr(it.icon)}`,`color: ${jsStr(it.color)}`];
+    if(it.keyItem) parts.push("keyItem: true");
+    if(it.desc) parts.push(`desc: ${jsStr(it.desc)}`);
+    o+=`  ${it.key}: { ${parts.join(", ")} },\n`;
+  });
+  return o+"};\n";
+}
+function lineToCode(ln,ind){
+  const p=" ".repeat(ind);
+  if(ln.k==="say") return `${p}{ speaker: ${jsStr(ln.speaker||"narrator")}, text: ${jsStr(ln.text)} },`;
+  if(ln.k==="choice"){
+    let s=`${p}{ choice: [\n`;
+    ln.options.filter(o=>o.text).forEach(o=>{ s+=`${p}  { text: ${jsStr(o.text)}${o.set?`, set: ${jsStr(o.set)}`:""} },\n`; });
+    return s+`${p}] },`;
+  }
+  if(ln.k==="set") return `${p}{ set: ${jsStr(ln.flag)} },`;
+  if(ln.k==="give") return `${p}{ give: ${jsStr(ln.item)} },`;
+  if(ln.k==="wait") return `${p}{ wait: ${ln.sec||0} },`;
+  return "";
+}
+function genDialogues(){
+  let o="// Generated by Mo Story Studio\n// → src/story/dialogues/ (split per chapter as you like)\nexport const DIALOGUES = [\n";
+  Object.values(D.stages).forEach(s=>{
+    (s.dialogues||[]).forEach(dlg=>{
+      if(!dlg.lines.length) return;
+      o+=`  { id: ${jsStr(dlg.id)}, lines: [`;
+      o+= dlg.title?`   // ${dlg.title} (${s.id})\n`:"\n";
+      dlg.lines.forEach(ln=>{ const c=lineToCode(ln,4); if(c)o+=c+"\n"; });
+      o+="  ] },\n";
+    });
+  });
+  return o+"];\n";
+}
+function className(s){ return "Stage_"+String(s.id).replace(/[^a-zA-Z0-9]/g,"_"); }
+function genStages(){
+  let o="// Generated skeletons by Mo Story Studio\n// Save each class under src/stages/<chapter>/<ClassName>.js and register it in stages/index.js.\n";
+  o+="// The beat sheet is carried in as design comments. Fill the TODOs with real terrain & entities.\n\n";
+  Object.values(D.stages).forEach(s=>{
+    o+="/".repeat(72)+"\n";
+    o+=`import { Stage } from '../../engine/Stage.js';\n`;
+    o+=`import { buildFromAscii } from '../../engine/LevelLayout.js';\n`;
+    o+=`// import { NPC } from '../../entities/NPC.js';  // + Enemy, Collectible, Lever, Gate, ExitDoor…\n\n`;
+    o+=`export class ${className(s)} extends Stage {\n`;
+    o+=`  static meta = { id: ${jsStr(s.id)}, title: ${jsStr(s.title)}, subtitle: ${jsStr(s.subtitle)} };\n`;
+    if(s.mood) o+=`  // env / mood: ${s.mood}\n`;
+    o+=`\n  async build() {\n`;
+    if(s.knows) o+=`    // [context] ${s.knows}\n`;
+    if(s.puzzle) o+=`    // [puzzle] ${s.puzzle}\n`;
+    if(s.enemies) o+=`    // [enemies] ${s.enemies}\n`;
+    if(s.collectibles) o+=`    // [collectibles] ${s.collectibles}\n`;
+    if(s.clear) o+=`    // [clear] ${s.clear}\n`;
+    if((s.flags||[]).length) o+=`    // [flags left] ${s.flags.join(", ")}\n`;
+    o+=`    this.setBounds({ minX: 0, maxX: 60, minY: -1, maxY: 20 });\n`;
+    o+=`    // TODO: buildFromAscii(this, \`...terrain...\`)\n`;
+    o+=`    this.spawnPlayer(3, 3);\n`;
+    o+=`    // TODO: place NPCs / enemies / items / doors\n`;
+    if((s.objectives||[]).filter(Boolean).length) o+=`    this.setObjective(${jsStr(s.objectives.filter(Boolean)[0])});\n`;
+    o+=`  }\n`;
+    if((s.dialogues||[]).length) o+=`\n  // dialogue ids: ${s.dialogues.map(d=>d.id).join(", ")}  → new NPC({ dialogue: '<id>' })\n`;
+    o+=`}\n\n`;
+  });
+  return o;
+}
+function slugify(t){ const m=String(t).match(/(?:chapter|ch)\s*(\d+)/i)||String(t).match(/(\d+)\s*장/); if(m) return "ch"+m[1];
+  return String(t).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""); }
+
+function backupPanel(){
+  const box=h("div",{});
+  box.append(h("div",{class:"evhead"},h("span",{class:"fname"},"mo-design.json — full design backup"),
+    h("div",{style:"flex:1"}),
+    h("button",{class:"btn ghost tiny",onclick:()=>copyText(JSON.stringify(D,null,2))},"Copy"),
+    h("button",{class:"btn tiny",onclick:()=>downloadText("mo-design.json",JSON.stringify(D,null,2))},"Save backup")));
+  box.append(h("div",{class:"card",style:"margin-bottom:14px"},
+    h("div",{class:"muted",style:"font-size:13px;line-height:1.7"},
+      "Everything here autosaves to this browser, but to move between machines — or to hand this file to Claude Code so it can generate all the stage files for you — export the JSON. Commit it into the repo to share and version it with the game.")));
+  const restore=h("div",{class:"card"});
+  restore.append(h("h3",{style:"font-family:var(--f-serif);font-size:16px;margin-bottom:10px"},"Restore · paste"));
+  const ta=h("textarea",{rows:"6",placeholder:"Paste a backup JSON here and press Restore",style:"font-family:var(--f-mono);font-size:12px"});
+  restore.append(ta, h("div",{class:"row",style:"margin-top:10px;justify-content:space-between"},
+    h("span",{class:"faint",style:"font-size:12px"},"⚠ Restoring overwrites the current design"),
+    h("button",{class:"btn",onclick:()=>{
+      try{ const obj=JSON.parse(ta.value); if(!obj.chapters||!obj.stages) throw 0;
+        if(confirm("Overwrite the current design with this backup?")){ D=obj; if(!D.chat)D.chat=[]; save(true); active="overview"; renderAll(); toast("Restored"); } }
+      catch(e){ toast("That isn't a valid backup JSON"); } }},"Restore")));
+  box.append(restore);
+  box.append(h("div",{class:"row",style:"margin-top:14px"},
+    h("button",{class:"btn ghost tiny",style:"color:var(--danger);border-color:var(--danger)",onclick:()=>{
+      if(confirm("Erase everything and reset to the starter example (Mo demo)?")){ localStorage.removeItem(LS_KEY); load(); active="overview"; renderAll(); toast("Reset"); } }},"⟲ Reset to starter example")));
+  return box;
+}
+
+async function copyText(text){
+  try{ await navigator.clipboard.writeText(text); toast("Copied"); return; }catch(e){}
+  const ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0";
+  document.body.append(ta); ta.select();
+  try{ document.execCommand("copy"); toast("Copied"); }catch(e){ toast("Copy failed — select the text manually"); }
+  ta.remove();
+}
+let downloadsAPI=undefined;
+async function downloadText(filename, text){
+  if(downloadsAPI===undefined){ try{ downloadsAPI=(window.claude&&claude.use)?await claude.use("downloads"):null; }catch(e){ downloadsAPI=null; } }
+  if(downloadsAPI){
+    try{ await downloadsAPI.save({filename,data:text}); toast("Saved"); return; }
+    catch(e){ if(e&&e.code==="cancelled") return;
+      if(e&&e.code==="rejected_extension"){ try{ await downloadsAPI.save({filename:filename.replace(/\.\w+$/,".txt"),data:text}); toast("Saved (.txt)"); return; }catch(_){} } }
+  }
+  try{
+    const blob=new Blob([text],{type:"text/plain"}); const url=URL.createObjectURL(blob);
+    const a=document.createElement("a"); a.href=url; a.download=filename; document.body.append(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000); toast("Downloaded");
+  }catch(e){ copyText(text); }
+}
+
+/* ═══════════════ render dispatch ═══════════════ */
+function renderAll(){ renderNav(); renderView(); }
+function renderView(){
+  switch(active){
+    case "overview": return viewOverview();
+    case "characters": return viewCharacters();
+    case "items": return viewItems();
+    case "structure": return viewStructure();
+    case "stage": return viewStage();
+    case "writer": return viewWriter();
+    case "export": return viewExport();
+  }
+}
+function initTheme(){
+  const saved=localStorage.getItem("mo.theme");
+  if(saved) document.documentElement.setAttribute("data-theme",saved);
+  document.getElementById("themeBtn").addEventListener("click",()=>{
+    const cur=document.documentElement.getAttribute("data-theme");
+    const isDark = cur ? cur==="dark" : matchMedia("(prefers-color-scheme:dark)").matches;
+    const next=isDark?"light":"dark";
+    document.documentElement.setAttribute("data-theme",next); localStorage.setItem("mo.theme",next);
+  });
+}
+function showHelp(){
+  const bg=h("div",{class:"modal-bg",onclick:(e)=>{if(e.target===bg)bg.remove();}});
+  const m=h("div",{class:"modal"});
+  m.innerHTML=`
+    <h3>How this maps to the game</h3>
+    <p style="color:var(--ink-dim);font-size:14px;line-height:1.7;margin:0 0 12px">
+      Plan here, then <b>Export</b> to real engine files. Each planning field lists its engine target inline (the teal “in game” notes). The pipeline:</p>
+    <p style="font-family:var(--f-mono);font-size:12.5px;color:var(--teal);background:var(--panel-2);padding:10px 12px;border-radius:8px;margin:0 0 14px">
+      plan &rarr; talk to the Story Writer &rarr; Export code/JSON &rarr; paste into src/</p>
+    <table><tbody>
+      <tr><td>Overview</td><td>Design bible — title + world rules (each rule = one mechanic). Not read by the engine.</td></tr>
+      <tr><td>Characters</td><td>&rarr; <code>story/characters.js</code>. <b>key</b> = the <code>speaker</code> in dialogue; color = nameplate.</td></tr>
+      <tr><td>Items</td><td>&rarr; <code>story/items.js</code>. Used by <code>Collectible</code>, dialogue <code>give</code>, <code>ExitDoor.requiresItem</code>.</td></tr>
+      <tr><td>Structure</td><td>&rarr; <code>story/chapters.js</code>. Order = flow; <code>this.complete()</code> loads the next stage.</td></tr>
+      <tr><td>Stage</td><td>&rarr; a <code>Stage</code> subclass. meta=title card, env=mood, objectives=<code>setObjective()</code>, puzzle=<code>Lever/Gate</code>, clear=<code>ExitDoor</code>.</td></tr>
+      <tr><td>Dialogue</td><td>&rarr; <code>story/dialogues/</code>. Attach with <code>new NPC({ dialogue:'id' })</code>. {flag}/{key} auto-substitute.</td></tr>
+      <tr><td>Flags</td><td><code>game.story</code> — the glue. Branches, gated doors, and progress all read/write flags.</td></tr>
+    </tbody></table>
+    <p style="color:var(--ink-faint);font-size:13px;margin:12px 0 0">Autosaves to this browser. Back up important progress via Export → Design backup, and hand that JSON to Claude Code to auto-generate the stages.</p>
+    <div class="mrow"><button class="btn" id="helpOk">Got it</button></div>`;
+  bg.append(m); document.body.append(bg);
+  m.querySelector("#helpOk").addEventListener("click",()=>bg.remove());
+}
+
+/* ── boot ── */
+load(); initTheme(); renderAll();
+document.getElementById("helpBtn").addEventListener("click",showHelp);
+window.addEventListener("beforeunload",()=>{ if(dirty) flush(); });
+</script>

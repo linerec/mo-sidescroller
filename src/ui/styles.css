@@ -1,0 +1,107 @@
+/* ───────── 기본 레이아웃 ───────── */
+:root {
+  --ui-font: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  --ink: #f1ede4;
+  --ink-dim: #b9b3a6;
+  --panel: rgba(12, 14, 18, 0.82);
+  --accent: #e9c46a;
+}
+html, body { margin: 0; height: 100%; background: #0b0d10; overflow: hidden; font-family: var(--ui-font); color: var(--ink); }
+#game { position: fixed; inset: 0; }
+#gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#ui { position: absolute; inset: 0; pointer-events: none; user-select: none; }
+#ui > * { position: absolute; }
+.hidden { display: none !important; }
+
+/* ───────── HUD ───────── */
+#hud { inset: 0; transition: opacity .4s; }
+#hud.hidden-soft { opacity: 0; }
+#hud .hearts { position: absolute; top: 22px; left: 26px; display: flex; gap: 6px; font-size: 26px; letter-spacing: 2px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); }
+#hud .hearts .heart { color: #e26d5c; transition: transform .15s; }
+#hud .hearts .heart.empty { color: rgba(255,255,255,.18); }
+#hud .hearts .heart.pop { transform: scale(1.35); }
+#hud .objective { position: absolute; top: 62px; left: 28px; font-size: 14px; color: #fff4df; max-width: 46vw; text-shadow: 0 1px 4px #263b2e, 0 0 12px #263b2e; }
+#hud .objective b { color: var(--accent); font-weight: 600; margin-right: 6px; }
+#hud .items { position: absolute; top: 20px; right: 26px; display: flex; gap: 10px; }
+#hud .item { display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; font-size: 14px; }
+#hud .item .icon { font-size: 18px; }
+#hud .item .count { color: var(--ink-dim); }
+#hud .stage-name { position: absolute; bottom: 18px; right: 26px; font-size: 12px; color: rgba(255,248,223,.85); letter-spacing: .12em; text-shadow: 0 1px 5px #263b2e; }
+#hud .prompt { position: absolute; transform: translate(-50%, -100%); padding: 5px 10px; background: rgba(0,0,0,.7); border: 1px solid rgba(255,255,255,.2); border-radius: 6px; font-size: 13px; white-space: nowrap; }
+#hud .prompt kbd { display: inline-block; padding: 1px 6px; margin-right: 6px; border-radius: 4px; background: var(--ink); color: #111; font: 600 12px var(--ui-font); }
+#hud .toast { position: absolute; left: 50%; top: 18%; transform: translateX(-50%); padding: 10px 18px; background: var(--panel); border-radius: 8px; font-size: 15px; opacity: 0; transition: opacity .25s, transform .25s; }
+#hud .toast.show { opacity: 1; transform: translate(-50%, 8px); }
+
+/* ───────── 대화창 ───────── */
+#dialogue { left: 50%; bottom: 6vh; transform: translateX(-50%); width: min(880px, 92vw); pointer-events: auto; }
+#dialogue .box { background: var(--panel); border: 1px solid rgba(255,255,255,.14); border-radius: 12px; padding: 22px 28px 20px; box-shadow: 0 12px 40px rgba(0,0,0,.5); backdrop-filter: blur(6px); animation: rise .2s ease-out; }
+@keyframes rise { from { transform: translateY(12px); opacity: 0 } to { transform: none; opacity: 1 } }
+#dialogue .speaker { font-size: 14px; font-weight: 700; letter-spacing: .06em; margin-bottom: 8px; color: var(--accent); }
+#dialogue .speaker:empty { display: none; }
+#dialogue .text { font-size: 18px; line-height: 1.65; min-height: 3.3em; white-space: pre-wrap; }
+#dialogue .hint { text-align: right; font-size: 12px; color: var(--ink-dim); margin-top: 6px; height: 14px; }
+#dialogue .hint.blink { animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0 } }
+#dialogue .choices { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+#dialogue .choice { padding: 8px 14px; border-radius: 8px; font-size: 16px; color: var(--ink-dim); cursor: pointer; border: 1px solid transparent; }
+#dialogue .choice.selected { color: var(--ink); background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.2); }
+#dialogue .choice.selected::before { content: "▶ "; color: var(--accent); }
+
+/* ───────── 화면 전환 / 연출 ───────── */
+#fade { inset: 0; background: #000; opacity: 1; transition: opacity .6s ease; }
+#letterbox .bar { position: absolute; left: 0; right: 0; height: 0; background: #000; transition: height .5s ease; }
+#letterbox .bar.top { top: 0 } #letterbox .bar.bottom { bottom: 0 }
+#letterbox.on .bar { height: 9vh; }
+#title-card { inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: #000; opacity: 0; transition: opacity .8s ease; }
+#title-card .chapter { font-size: 14px; letter-spacing: .4em; color: var(--ink-dim); }
+#title-card .title { font-size: 40px; font-weight: 300; letter-spacing: .12em; }
+#title-card .subtitle { font-size: 15px; color: var(--ink-dim); font-style: italic; }
+
+/* ───────── 메뉴 화면 (타이틀/클리어/게임오버/일시정지) ───────── */
+.screen { inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; background: rgba(5,7,10,.78); pointer-events: auto; }
+.screen.transparent { background: rgba(5,7,10,.45); }
+.screen h1 { margin: 0; font-size: 56px; font-weight: 200; letter-spacing: .3em; }
+.screen h2 { margin: 0; font-size: 28px; font-weight: 300; letter-spacing: .2em; }
+.screen p { margin: 0; color: var(--ink-dim); font-size: 15px; text-align: center; line-height: 1.7; }
+.screen .menu { display: flex; flex-direction: column; gap: 10px; min-width: 260px; }
+.screen .menu .opt { padding: 10px 20px; text-align: center; font-size: 17px; color: var(--ink-dim); border: 1px solid transparent; border-radius: 8px; cursor: pointer; }
+.screen .menu .opt.selected { color: var(--ink); border-color: rgba(255,255,255,.25); background: rgba(255,255,255,.06); }
+.screen .menu .opt.selected::before { content: "▶ "; color: var(--accent); }
+.screen .menu .opt.disabled { opacity: .35; pointer-events: none; }
+.screen .keys { font-size: 12px; color: rgba(255,255,255,.4); letter-spacing: .05em; }
+
+/* ───────── 디버그 ───────── */
+#debug { top: 8px; left: 50%; transform: translateX(-50%); padding: 8px 12px; font: 12px/1.5 ui-monospace, Menlo, monospace; background: rgba(0,0,0,.6); border-radius: 6px; color: #9fe; white-space: pre; }
+
+/* Nocturne art direction: quiet typography leaves the valley in view. */
+:root{--ink:#d9eee5;--ink-dim:#8aa8ad;--panel:rgba(3,13,26,.88);--accent:#b9d9a6}
+html,body{background:#020918}
+#hud .hearts{top:27px;left:32px;gap:8px;font-size:16px;filter:none;opacity:.8}
+#hud .hearts .heart{color:#bad8be}
+#hud .objective{top:58px;left:33px;font-size:11px;font-weight:400;letter-spacing:.03em;color:#a6c2c2;text-shadow:0 1px 6px #020918}
+#hud .objective b{display:none}
+#hud .items{top:25px;right:30px}
+#hud .item{background:rgba(2,15,27,.5);border:1px solid #8ac5bb20;border-radius:2px;font-size:11px;padding:5px 9px}
+#hud .item .icon{font-size:14px}
+#hud .stage-name{bottom:26px;right:31px;font-size:10px;color:#7b9caa;letter-spacing:.16em;text-shadow:none}
+#hud .prompt{background:#041524db;border:1px solid #8cb6b44a;border-radius:2px;color:#d0e5dd;font-size:11px}
+#hud .toast{background:#041321d9;border-radius:2px;font-size:13px;color:#b9d6ca}
+#dialogue .box{background:linear-gradient(110deg,#031321ed,#061728d9);border:1px solid #85aeae26;border-radius:2px;box-shadow:0 15px 50px #0005}
+#dialogue .speaker{font-size:12px;font-weight:400;letter-spacing:.18em}
+#dialogue .text{font-size:17px;color:#c4dad6}
+#title-card{background:#020919}
+.screen{background:rgba(2,8,20,.91)}
+.screen.transparent{background:rgba(2,8,20,.58);backdrop-filter:blur(2px)}
+.screen.title-screen{align-items:flex-start;padding-left:13vw;box-sizing:border-box;gap:18px;background:linear-gradient(90deg,rgba(2,8,23,.84),rgba(2,8,23,.20) 56%,rgba(2,8,23,.08)),url('../../assets/backgrounds/title.png') center/cover no-repeat #031122}
+.title-screen .title-eyebrow{font-size:9px;letter-spacing:.33em;color:#83b1b4;margin-bottom:4px}
+.title-screen h1{font-family:Georgia,'Times New Roman',serif;font-size:106px;letter-spacing:.16em;font-weight:400;line-height:1.0;color:#e0eee0;text-shadow:0 0 60px #8ed6b52a}
+.title-screen .title-subtitle{font-size:15px;letter-spacing:.55em;color:#b1cdca;margin:0 0 18px}
+.title-screen .title-story{font-size:12px;letter-spacing:.04em;color:#86aaa9;margin-bottom:19px}
+.title-screen .menu{min-width:180px;gap:3px}
+.screen .menu .opt{border-radius:0;font-size:14px;letter-spacing:.08em}
+.title-screen .menu .opt{text-align:left;padding:11px 0}
+.screen .menu .opt.selected{background:transparent;border-color:transparent;color:#e0f0d8}
+.screen .menu .opt.selected::before{content:'— ';color:#86c9bc}
+.title-screen .keys{position:absolute;bottom:32px;left:13vw;font-size:10px;text-align:left;color:#729398;line-height:2.2;letter-spacing:0}
+.title-screen .keys a{text-decoration:none;border-bottom:1px solid #63858b50}
+@media(max-width:600px){.screen.title-screen{padding-left:9vw;background-position:61% center}.title-screen h1{font-size:82px}.title-screen .keys{left:9vw;right:7vw;bottom:23px;font-size:9px}.title-screen .title-eyebrow{font-size:8px;letter-spacing:.2em}#hud .hearts{left:20px;top:20px}#hud .objective{left:21px;top:47px;max-width:65vw}#dialogue .text{font-size:15px}}

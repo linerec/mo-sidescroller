@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Mochi · 작은 숲의 친구</title>
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"}}</script>
+  <link rel="stylesheet" href="./src/characters/preview.css">
+</head>
+<body>
+  <header><a href="./">MO <span>작은 숲의 이야기</span></a><a class="play" href="./?stage=stage-1-1">게임에서 만나기 ↗</a></header>
+  <main>
+    <section class="portrait" aria-label="Mochi 3D 미리보기">
+      <div class="edition">FOREST FRIENDS <span>NO. 001</span></div>
+      <canvas id="portrait"></canvas>
+      <div class="caption"><span id="status" role="status">숲에서 친구를 데려오는 중…</span><span>드래그하여 둘러보기 · 스크롤로 확대</span></div>
+    </section>
+    <section class="details">
+      <p class="eyebrow">A LITTLE SOFTNESS, A LITTLE COURAGE</p>
+      <h1>Mochi<span>모찌</span></h1>
+      <p class="intro">말랑한 마음으로,<br>커다란 숲을 모험해요.</p>
+      <p class="description">햇살을 머금은 찹쌀 요정. 겁이 나면 눈썹에 힘을 주고, 기쁜 날엔 별빛처럼 통통 뛰어요. 기다림이 길어지면… 잠깐만 눈을 붙일지도요.</p>
+      <div class="divider"></div>
+      <div class="motion-title"><h2>모찌의 작은 몸짓</h2><span>13가지 이야기</span></div>
+      <div id="motions" class="motions"></div>
+      <div class="controls"><button id="pause">잠깐 멈추기</button><label>속도 <select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option></select></label><button id="turn">반대쪽 보기</button></div>
+      <p class="hint">게임 조작 · A D 이동 · SPACE 2단 점프<br>J 공격 · Q 등불 사용 · 12초 기다리면 꾸벅</p>
+    </section>
+  </main>
+  <footer><span>하얀 찹쌀 · 네모난 분홍 볼 · 꼬불꼬불 줄기</span><a href="./docs/CHARACTER_AUTHORING.md">캐릭터 제작 가이드 ↗</a></footer>
+  <script type="module" src="./src/characters/preview.js"></script>
+</body>
+</html>

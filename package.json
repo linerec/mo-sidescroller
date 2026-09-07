@@ -1,0 +1,13 @@
+{
+  "name": "mo-sidescroller",
+  "version": "0.1.0",
+  "private": true,
+  "description": "2.5D side-scrolling action-adventure framework (Three.js, no build step)",
+  "type": "module",
+  "scripts": {
+    "start": "npx --yes serve -l 8080 .",
+    "dev": "python3 -m http.server 8080",
+    "check:character": "node tools/check-character.mjs",
+    "check:world": "node tools/check-world-kit.mjs"
+  }
+}
