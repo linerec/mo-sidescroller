@@ -24,5 +24,127 @@
     "#############...#################################...##################",
     "#############...#################################...##################"
   ],
-  "decorations": []
+  "decorations": [],
+  "entities": [
+    {
+      "type": "sign",
+      "x": 6,
+      "y": 2.75,
+      "dialogue": "sign_start"
+    },
+    {
+      "type": "npc",
+      "ref": "elder",
+      "name": "elder",
+      "x": 10,
+      "y": 3,
+      "color": "#d8c9a3",
+      "cloth": "#5a4a3a"
+    },
+    {
+      "type": "enemy",
+      "name": "slime-1",
+      "x": 20,
+      "y": 2.5,
+      "patrol": {
+        "minX": 17,
+        "maxX": 25
+      }
+    },
+    {
+      "type": "enemy",
+      "name": "slime-2",
+      "x": 40,
+      "y": 2.5,
+      "speed": 2.4,
+      "patrol": {
+        "minX": 38,
+        "maxX": 43
+      }
+    },
+    {
+      "type": "enemy",
+      "variant": "beetle",
+      "name": "beetle-1",
+      "x": 54,
+      "y": 2.5,
+      "patrol": {
+        "minX": 52.5,
+        "maxX": 55.5
+      }
+    },
+    {
+      "type": "item",
+      "itemId": "memory_fragment",
+      "uid": "s11_frag_a",
+      "x": 24,
+      "y": 5.2
+    },
+    {
+      "type": "item",
+      "itemId": "memory_fragment",
+      "uid": "s11_frag_b",
+      "x": 32,
+      "y": 7.2
+    },
+    {
+      "type": "item",
+      "itemId": "memory_fragment",
+      "uid": "s11_frag_c",
+      "x": 50.5,
+      "y": 4.8
+    },
+    {
+      "type": "item",
+      "itemId": "old_key",
+      "uid": "key_1",
+      "x": 63.5,
+      "y": 7.4
+    },
+    {
+      "type": "gate",
+      "ref": "gate",
+      "x": 44.5,
+      "y": 5.5,
+      "w": 1,
+      "h": 7,
+      "flag": "gate_1_open",
+      "auto": false
+    },
+    {
+      "type": "lever",
+      "ref": "tower_lever",
+      "x": 40,
+      "y": 8.5,
+      "flag": "gate_1_open"
+    },
+    {
+      "type": "hazard",
+      "kind": "pit",
+      "x": 50.5,
+      "y": -4,
+      "w": 3,
+      "h": 2
+    },
+    {
+      "type": "hazard",
+      "kind": "spikes",
+      "x": 57,
+      "y": 2.3,
+      "w": 2,
+      "h": 0.6
+    },
+    {
+      "type": "checkpoint",
+      "x": 53,
+      "y": 3.1
+    },
+    {
+      "type": "exit",
+      "x": 67.5,
+      "y": 2.8,
+      "requiresItem": "old_key",
+      "lockedText": "문은 굳게 닫혀 있다. 열쇠 구멍이 희미하게 빛난다."
+    }
+  ]
 }

@@ -1,12 +1,9 @@
 import { Stage } from '../../engine/Stage.js';
 import { buildFromAscii } from '../../engine/LevelLayout.js';
-import { NPC } from '../../entities/NPC.js';
-import { Enemy, Beetle } from '../../entities/Enemy.js';
-import { Collectible } from '../../entities/Items.js';
-import { Hazard } from '../../entities/Terrain.js';
-import { Sign, Lever, Gate, ExitDoor, Checkpoint, Trigger } from '../../entities/Interactables.js';
+import { Trigger } from '../../entities/Interactables.js';
 import { FOREST_ENV } from '../../world/ForestAtmosphere.js';
 import { loadMap } from '../../world/MapData.js';
+import { spawnMapEntities } from '../../world/MapEntities.js';
 import { mountWoodland, dressForestKeeper } from '../../world/WoodlandStage.js';
 
 /**
@@ -43,35 +40,19 @@ export class Stage_1_1_Awakening extends Stage {
     // Layered woodland art; terrain collision and stage routes remain stage-owned.
     await mountWoodland(this, map);
 
-    // ── 등장인물 / 표지판 ──
-    this.add(new Sign({ x: 6, y: GROUND + 0.75, dialogue: 'sign_start' }));
-    this.elder = this.add(new NPC({
-      name: 'elder', x: 10, y: GROUND + 1, color: 0xd8c9a3, cloth: 0x5a4a3a,
-      dialogue: () => (g.story.has('met_elder') ? 'elder_repeat' : 'elder_first'),
-    }));
+    // ── 배치는 데이터에서 (maps/stage-1-1.json 의 entities[]) ──
+    //    표지판·NPC·적·수집품·레버/문·함정·체크포인트·출구가 전부 맵 JSON에서 생성된다.
+    //    맵 에디터에서 옮기면 코드 수정 없이 반영되고, ?draft=stage-1-1 로 바로 확인할 수 있다.
+    const refs = spawnMapEntities(this, map);
 
-    dressForestKeeper(this.elder, this.kit);
-
-    // ── 적 ──
-    this.add(new Enemy({ name: 'slime-1', x: 20, y: GROUND + 0.5, patrol: { minX: 17, maxX: 25 } }));
-    this.add(new Enemy({ name: 'slime-2', x: 40, y: GROUND + 0.5, patrol: { minX: 38, maxX: 43 }, speed: 2.4 }));
-    this.add(new Beetle({ name: 'beetle-1', x: 54, y: GROUND + 0.5, patrol: { minX: 52.5, maxX: 55.5 } }));
-
-    // ── 수집품 ──
-    this.add(new Collectible({ itemId: 'memory_fragment', uid: 's11_frag_a', x: 24, y: 5.2 }));   // P1 위 — 오르는 길에 획득
-    this.add(new Collectible({ itemId: 'memory_fragment', uid: 's11_frag_b', x: 32, y: 7.2 }));   // P2 위
-    this.add(new Collectible({ itemId: 'memory_fragment', uid: 's11_frag_c', x: 50.5, y: 4.8 }));
-    this.add(new Collectible({ itemId: 'old_key', uid: 'key_1', x: 63.5, y: 7.4 }));
-
-    // ── 퍼즐: 레버 → 문 ──
-    this.gate = this.add(new Gate({ x: 44.5, y: GROUND + 3.5, w: 1, h: 7, flag: 'gate_1_open', auto: false }));
-    this.add(new Lever({ x: 40, y: 8.5, flag: 'gate_1_open', onToggle: () => this.#gateEvent() }));
-
-    // ── 위험 / 체크포인트 / 출구 ──
-    this.add(new Hazard({ x: 50.5, y: -4, w: 3, h: 2, kind: 'pit' }));
-    this.add(new Hazard({ x: 57, y: GROUND + 0.3, w: 2, h: 0.6, kind: 'spikes' }));
-    this.add(new Checkpoint({ x: 53, y: GROUND + 1.1 }));
-    this.add(new ExitDoor({ x: 67.5, y: GROUND + 0.8, requiresItem: 'old_key', lockedText: '문은 굳게 닫혀 있다. 열쇠 구멍이 희미하게 빛난다.' }));
+    // ── 이야기 연결은 코드에서 (데이터가 아닌 "행동"만) ──
+    this.elder = refs.elder;
+    if (this.elder) {
+      this.elder.dialogue = () => (g.story.has('met_elder') ? 'elder_repeat' : 'elder_first');
+      dressForestKeeper(this.elder, this.kit);
+    }
+    this.gate = refs.gate;
+    if (refs.tower_lever) refs.tower_lever.onToggle = () => this.#gateEvent();
 
     // ── 트리거 (영역 진입 이벤트) ──
     this.add(new Trigger({ name: 'near-elder', x: 8.5, y: GROUND + 1.5, w: 2, h: 3, flag: 'saw_elder', onEnter: () => {

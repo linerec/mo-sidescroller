@@ -247,6 +247,29 @@ main{flex:1;min-width:0;overflow-y:auto;overflow-x:hidden;padding:26px 30px 60px
 .modal table{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0}
 .modal td{padding:6px 8px;border-bottom:1px solid var(--line-soft);vertical-align:top}
 .modal td:first-child{white-space:nowrap;color:var(--teal);font-family:var(--f-mono);font-size:12px}
+/* map editor */
+.map-wrap{display:grid;grid-template-columns:150px minmax(0,1fr) 250px;gap:14px;align-items:start}
+@media(max-width:920px){.map-wrap{grid-template-columns:1fr}}
+.map-tools{display:flex;flex-direction:column;gap:5px;position:sticky;top:0}
+.map-tools .tgroup{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin:10px 0 2px}
+.map-tools button.tool{display:flex;align-items:center;gap:9px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink-dim);font-size:13px;text-align:left}
+.map-tools button.tool .g{width:16px;text-align:center;font-size:14px}
+.map-tools button.tool:hover{border-color:var(--accent);color:var(--ink)}
+.map-tools button.tool.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink);font-weight:500}
+.map-canvas-wrap{border:1px solid var(--line);border-radius:10px;overflow:auto;background:#141a20;max-height:calc(100vh - 250px)}
+.map-canvas-wrap canvas{display:block;cursor:crosshair;touch-action:none}
+.map-coord{font-family:var(--f-mono);font-size:11px;color:var(--ink-faint);padding:5px 2px 0;height:16px}
+.map-side{display:flex;flex-direction:column;gap:12px}
+.map-set{display:flex;flex-direction:column;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+.map-set .setrow{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-dim)}
+.map-set .setrow>span:first-child{min-width:52px}
+.map-set .setrow input,.map-set .setrow select{width:auto;flex:1;padding:5px 7px}
+.map-insp{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px}
+.map-insp h4{font-family:var(--f-serif);font-size:15px;margin-bottom:4px;display:flex;align-items:center;gap:7px}
+.map-insp .ifield{display:flex;flex-direction:column;gap:4px;margin-top:9px}
+.map-insp .ifield label{font-size:11px;color:var(--ink-faint)}
+.map-insp .ifield input,.map-insp .ifield select{padding:6px 8px}
+.map-insp .xy{display:flex;gap:8px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -416,6 +439,7 @@ const SECTIONS=[
   { id:"items", ico:"◆", label:"Items" },
   { id:"structure", ico:"❧", label:"Structure" },
   { id:"stage", ico:"▤", label:"Stage" },
+  { id:"map", ico:"▦", label:"Map" },
   { id:"writer", ico:"✒", label:"Story Writer" },
   { id:"export", ico:"⇩", label:"Export" }
 ];
@@ -1000,7 +1024,11 @@ function exportFiles(){
     { key:"dialogues", name:"dialogues.js", where:"src/story/dialogues/", icon:"✒", gen:genDialogues,
       note:"All dialogue scripts. Split per chapter if you like; register via dialogues/index.js." },
     { key:"stages", name:"(stage skeletons)", where:"src/stages/", icon:"▤", gen:genStages,
-      note:"One Stage class per stage — beat sheet moved into comments, with TODOs for terrain & entities. Save each under src/stages/<chapter>/ and register in stages/index.js." }
+      note:"One Stage class per stage — beat sheet moved into comments, with TODOs for terrain & entities. Save each under src/stages/<chapter>/ and register in stages/index.js." },
+    { key:"map-json", name:(D._sel||"stage")+".json", where:"maps/", icon:"▦", gen:genMapJson,
+      note:"The whole level in the engine's MapData format — terrain, spawn, mood/seed, decorations AND entities. Save as maps/<id>.json; the stage loads it with loadMap() + spawnMapEntities(). This is the only file you need for layout." },
+    { key:"map-entities", name:"(entity code — optional)", where:"build()", icon:"◈", gen:genMapEntities,
+      note:"Optional: the same entities written as build() code, if you'd rather hardcode a few in the stage class instead of the map JSON." }
   ];
 }
 function jsStr(s){ return "'"+String(s||"").replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/\n/g,"\\n")+"'"; }
@@ -1138,6 +1166,292 @@ async function downloadText(filename, text){
   }catch(e){ copyText(text); }
 }
 
+/* ═══════════════ Map editor ═══════════════ */
+/* Edits the engine's map format (MapData.js): rows of . # =, spawn, mood, seed,
+   decorations. Also places gameplay entities (exported as build() code). */
+const MOODS=["morning","glade"];
+const ENTITY_TYPES=[
+  { t:"npc", label:"NPC", icon:"☻", color:"#d8c9a3" },
+  { t:"enemy", label:"Enemy", icon:"✸", color:"#7fae63" },
+  { t:"item", label:"Item", icon:"◆", color:"#7ec8e3" },
+  { t:"lever", label:"Lever", icon:"⌐", color:"#e07a54" },
+  { t:"gate", label:"Gate", icon:"⊟", color:"#b98a5a" },
+  { t:"exit", label:"Exit", icon:"⌂", color:"#ffd27a" },
+  { t:"checkpoint", label:"Checkpoint", icon:"⚑", color:"#8fb26a" },
+  { t:"sign", label:"Sign", icon:"▮", color:"#9fb4c7" },
+  { t:"hazard", label:"Hazard", icon:"▲", color:"#c6bfae" },
+];
+let mapTool="#";        // '#' '=' 'erase' 'spawn' 'select' or an entity type
+let mapCell=24;         // px per cell
+let mapSelEnt=null;     // selected entity id
+
+function ensureMap(s){
+  if(s.map && Array.isArray(s.map.rows) && s.map.rows.length) return s.map;
+  const W=44, H=14, rows=[];
+  for(let r=0;r<H;r++){
+    let row="";
+    for(let c=0;c<W;c++){ row += (r>=H-2 && !(c>=14&&c<=16)) ? "#" : "."; }   // 바닥 2줄 + 작은 구덩이
+    rows.push(row);
+  }
+  s.map={ version:1, id:s.id, width:W, height:H, rows, spawn:{x:3,y:3}, mood:"morning", seed:71, autoForest:true,
+    entities:[ { id:uid("ent"), type:"exit", x:W-4, y:3 } ], decorations:[] };
+  save();
+  return s.map;
+}
+// MapData 좌표: y는 바닥(0)에서 위로, 1칸 = 1유닛
+function worldOfCell(map,col,r){ return { x:col+0.5, y:(map.height-1-r)+0.5 }; }
+function worldToPx(map,x,y,cs){ return { x:x*cs, y:(map.height-y)*cs }; }   // 월드(y↑) → 캔버스px(y↓)
+function resizeMap(map,W,H){
+  W=Math.max(8,Math.min(160,W|0)); H=Math.max(4,Math.min(64,H|0));
+  // 높이는 위에서 가감(바닥 유지), 너비는 오른쪽에서 가감
+  let rows=map.rows.map(r=> r.length<W ? r+".".repeat(W-r.length) : r.slice(0,W));
+  if(H<rows.length) rows=rows.slice(rows.length-H);
+  else while(rows.length<H) rows.unshift(".".repeat(W));
+  map.rows=rows; map.width=W; map.height=H;
+}
+
+function viewMap(){
+  const v=document.getElementById("view"); v.innerHTML="";
+  const s=D._sel?D.stages[D._sel]:null;
+  if(!s){ v.append(h("div",{class:"section-head"},h("h2",{},"Map")), h("div",{class:"empty"},"Pick a stage in Structure to edit its map.")); return; }
+  const map=ensureMap(s); if(!map.id) map.id=s.id;
+  v.append(h("div",{class:"section-head",style:"margin-bottom:10px"},
+    h("div",{class:"eyebrow"},"Level layout"),
+    h("div",{class:"row",style:"justify-content:space-between;align-items:flex-end;gap:12px"},
+      h("div",{}, h("h2",{style:"font-family:var(--f-serif)"},"Map · "+(s.title||s.id)),
+        h("div",{class:"lede"},"Paint terrain, drop the spawn point and gameplay entities. Exports the engine map JSON + placement code.")),
+      mapStagePicker(s))));
+  v.append(mapsBanner('Everything here exports as one file — <code>maps/'+s.id+'.json</code>: terrain (<code>. # =</code>), spawn, mood/seed <b>and the placed entities</b>. The engine spawns them via <code>spawnMapEntities()</code>, so moving something here needs no code change — save the JSON and live-preview with <code>?draft='+s.id+'</code>. Give an entity a <b>ref</b> to wire story behaviour to it in the stage class. 1 cell = 1 unit; bottom-left is (0,0).'));
+  const wrap=h("div",{class:"map-wrap"});
+  wrap.append(mapToolbar(), mapCanvasBlock(s,map), mapSidebar(s,map));
+  v.append(wrap);
+}
+function mapStagePicker(cur){
+  const sel=h("select",{style:"max-width:230px",onchange:e=>{ D._sel=e.target.value; save(); renderAll(); }});
+  for(const cp of D.chapters) for(const sid of (cp.stages||[])){ const s=D.stages[sid]; if(!s) continue;
+    const o=h("option",{value:sid},`${sid} · ${s.title||""}`); if(sid===cur.id) o.selected=true; sel.append(o); }
+  return sel;
+}
+function mapToolbar(){
+  const box=h("div",{class:"map-tools"});
+  const tool=(t,icon,label)=>h("button",{class:"tool"+(mapTool===t?" on":""),onclick:()=>{ mapTool=t; if(t!=="select") mapSelEnt=null; viewMap(); }}, h("span",{class:"g"},icon), label);
+  box.append(h("div",{class:"tgroup"},"Terrain"),
+    tool("#","▩","Ground"), tool("=","▬","One-way"), tool("erase","⌫","Erase"),
+    h("div",{class:"tgroup"},"Place"),
+    tool("spawn","◉","Spawn"), tool("select","➤","Select / move"));
+  box.append(h("div",{class:"tgroup"},"Entities"));
+  for(const et of ENTITY_TYPES) box.append(tool(et.t, et.icon, et.label));
+  return box;
+}
+function mapCanvasBlock(s,map){
+  const block=h("div",{});
+  const wrap=h("div",{class:"map-canvas-wrap"});
+  const cv=document.createElement("canvas");
+  wrap.append(cv); const coord=h("div",{class:"map-coord"},"");
+  block.append(wrap,coord);
+  drawMap(cv,map);
+  let painting=false,last="";
+  const cellAt=(ev)=>{ const rc=cv.getBoundingClientRect(); return { col:Math.floor((ev.clientX-rc.left)/mapCell), r:Math.floor((ev.clientY-rc.top)/mapCell) }; };
+  const inb=(c)=>c.col>=0&&c.col<map.width&&c.r>=0&&c.r<map.height;
+  function paint(c){ if(!inb(c))return; const ch=mapTool==="erase"?".":mapTool; const row=map.rows[c.r]; map.rows[c.r]=row.slice(0,c.col)+ch+row.slice(c.col+1); save(); drawMap(cv,map); }
+  function place(c){ if(!inb(c))return; const w=worldOfCell(map,c.col,c.r);
+    if(mapTool==="spawn"){ map.spawn={x:+w.x.toFixed(1),y:+w.y.toFixed(1)}; save(); drawMap(cv,map); return; }
+    const e={ id:uid("ent"), type:mapTool, x:+w.x.toFixed(1), y:+w.y.toFixed(1) };
+    if(mapTool==="item") e.itemId=D.items[0]?.key||"";
+    if(mapTool==="enemy") e.variant="slime";
+    if(mapTool==="hazard") e.kind="spikes";
+    if(mapTool==="npc") e.name="npc";
+    map.entities.push(e); mapSelEnt=e.id; mapTool="select"; save(); viewMap();
+  }
+  function pick(c){ let best=null,bd=1.0; const wy=map.height-1-c.r+0.5, wx=c.col+0.5;
+    for(const e of map.entities){ const d=Math.hypot(e.x-wx,e.y-wy); if(d<bd){bd=d;best=e;} }
+    mapSelEnt=best?best.id:null; viewMap(); }
+  cv.addEventListener("pointerdown",ev=>{ ev.preventDefault(); const c=cellAt(ev);
+    if(mapTool==="select"){ pick(c); return; }
+    if(mapTool==="spawn"||ENTITY_TYPES.some(t=>t.t===mapTool)){ place(c); return; }
+    painting=true; last=c.col+","+c.r; paint(c); try{cv.setPointerCapture(ev.pointerId);}catch(e){} });
+  cv.addEventListener("pointermove",ev=>{ const c=cellAt(ev); coord.textContent = inb(c)?`x ${c.col}   y ${map.height-1-c.r}`:"";
+    if(painting&&(mapTool==="#"||mapTool==="="||mapTool==="erase")){ const k=c.col+","+c.r; if(k!==last){last=k;paint(c);} } });
+  cv.addEventListener("pointerup",()=>painting=false);
+  cv.addEventListener("pointerleave",()=>{painting=false;});
+  cv.addEventListener("contextmenu",ev=>{ ev.preventDefault(); const c=cellAt(ev); if(!inb(c))return; const row=map.rows[c.r]; map.rows[c.r]=row.slice(0,c.col)+"."+row.slice(c.col+1); save(); drawMap(cv,map); });
+  return block;
+}
+function drawMap(cv,map){
+  const cs=mapCell, dpr=Math.min(2,window.devicePixelRatio||1);
+  cv.width=map.width*cs*dpr; cv.height=map.height*cs*dpr;
+  cv.style.width=map.width*cs+"px"; cv.style.height=map.height*cs+"px";
+  const x=cv.getContext("2d"); x.setTransform(dpr,0,0,dpr,0,0);
+  const sky=x.createLinearGradient(0,0,0,map.height*cs);
+  if(map.mood==="glade"){ sky.addColorStop(0,"#20303a"); sky.addColorStop(1,"#33473a"); }
+  else { sky.addColorStop(0,"#1c2732"); sky.addColorStop(1,"#2a3a30"); }
+  x.fillStyle=sky; x.fillRect(0,0,map.width*cs,map.height*cs);
+  x.strokeStyle="rgba(255,255,255,.045)"; x.lineWidth=1;
+  for(let c=0;c<=map.width;c++){ x.beginPath(); x.moveTo(c*cs+.5,0); x.lineTo(c*cs+.5,map.height*cs); x.stroke(); }
+  for(let r=0;r<=map.height;r++){ x.beginPath(); x.moveTo(0,r*cs+.5); x.lineTo(map.width*cs,r*cs+.5); x.stroke(); }
+  for(let r=0;r<map.height;r++) for(let c=0;c<map.width;c++){
+    const ch=map.rows[r][c], px=c*cs, py=r*cs;
+    if(ch==="#"){ x.fillStyle="#584a37"; x.fillRect(px,py,cs,cs);
+      if(r===0||map.rows[r-1][c]!=="#"){ x.fillStyle="#6f8f4e"; x.fillRect(px,py,cs,Math.max(3,cs*0.22)); } }
+    else if(ch==="="){ x.fillStyle="#8a6a45"; x.fillRect(px,py+cs*0.30,cs,Math.max(3,cs*0.2)); }
+  }
+  // spawn
+  const sp=worldToPx(map,map.spawn.x,map.spawn.y,cs);
+  x.fillStyle="#f1e6cf"; x.beginPath(); x.arc(sp.x,sp.y-cs*0.1,cs*0.26,0,7); x.fill();
+  x.fillStyle="#d9534f"; x.fillRect(sp.x-cs*0.22,sp.y+cs*0.05,cs*0.44,cs*0.16);
+  x.fillStyle="rgba(255,255,255,.5)"; x.font=`${Math.round(cs*0.34)}px system-ui`; x.textAlign="center"; x.fillText("spawn",sp.x,sp.y+cs*0.55);
+  // entities
+  x.textAlign="center"; x.textBaseline="middle";
+  for(const e of map.entities){ const et=ENTITY_TYPES.find(t=>t.t===e.type)||{icon:"?",color:"#fff"}; const p=worldToPx(map,e.x,e.y,cs);
+    if(e.id===mapSelEnt){ x.strokeStyle="#e9c46a"; x.lineWidth=2; x.strokeRect(p.x-cs*0.55,p.y-cs*0.55,cs*1.1,cs*1.1); }
+    x.font=`${Math.round(cs*0.62)}px system-ui`; x.fillStyle=et.color; x.fillText(et.icon,p.x,p.y);
+    const lbl = e.type==="item"?(e.itemId||"item") : e.type==="enemy"?(e.variant||"enemy") : e.type;
+    x.font=`${Math.round(cs*0.3)}px system-ui`; x.fillStyle="rgba(255,255,255,.55)"; x.fillText(lbl,p.x,p.y+cs*0.55);
+  }
+}
+/* right sidebar: map settings + IO + selected-entity inspector */
+function mapSidebar(s,map){
+  const box=h("div",{class:"map-side"});
+  const setRow=(label,ctrl)=>h("div",{class:"setrow"},h("span",{},label),ctrl);
+  const numI=(val,min,max,on)=>{ const i=h("input",{type:"number",min,max,value:val}); i.addEventListener("input",()=>on(parseInt(i.value)||0)); return i; };
+  const selI=(opts,val,on)=>{ const sc=h("select",{}); opts.forEach(o=>{const op=h("option",{value:o},o);if(String(o)===String(val))op.selected=true;sc.append(op);}); sc.addEventListener("change",()=>on(sc.value)); return sc; };
+  const set=h("div",{class:"map-set"});
+  set.append(h("div",{style:"font-weight:600;font-size:13px;margin-bottom:2px"},"Map settings"),
+    setRow("Width", numI(map.width,8,160,v=>{resizeMap(map,v,map.height);save();viewMap();})),
+    setRow("Height", numI(map.height,4,64,v=>{resizeMap(map,map.width,v);save();viewMap();})),
+    setRow("Mood", selI(MOODS,map.mood,v=>{map.mood=v;save();viewMap();})),
+    setRow("Seed", numI(map.seed,0,9999,v=>{map.seed=v;save();})),
+    setRow("Zoom", selI(["16","20","24","30","36"],mapCell,v=>{mapCell=+v;viewMap();})),
+    h("label",{class:"setrow",style:"cursor:pointer"},checkbox(map,"autoForest"),h("span",{style:"min-width:auto"},"Auto background forest")));
+  box.append(set);
+  box.append(h("div",{class:"row",style:"gap:6px;flex-wrap:wrap"},
+    h("button",{class:"btn ghost tiny",onclick:()=>copyText(genMapJson())},"Copy map JSON"),
+    h("button",{class:"btn ghost tiny",onclick:()=>copyText(genMapEntities())},"Copy entity code"),
+    h("button",{class:"btn ghost tiny",onclick:()=>importMapPrompt(s,map)},"Import JSON")));
+  const e = mapSelEnt ? map.entities.find(x=>x.id===mapSelEnt) : null;
+  if(e) box.append(entityInspector(s,map,e));
+  else box.append(h("div",{class:"map-insp muted",style:"font-size:12.5px;line-height:1.6"},
+    "Paint terrain with Ground / One-way (right-click erases). Use Spawn and the entity tools to drop objects, then Select to edit or move them."));
+  return box;
+}
+function entityInspector(s,map,e){
+  const box=h("div",{class:"map-insp"});
+  const et=ENTITY_TYPES.find(t=>t.t===e.type)||{icon:"?",label:e.type};
+  box.append(h("h4",{}, h("span",{style:"color:"+(et.color||"var(--accent)")},et.icon), et.label));
+  const field=(label,ctrl)=>h("div",{class:"ifield"},h("label",{},label),ctrl);
+  const txt=(key,ph)=>{ const i=h("input",{placeholder:ph||""}); i.value=e[key]||""; i.addEventListener("input",()=>{e[key]=i.value;save();mapRedraw();}); return i; };
+  const num=(key)=>{ const i=h("input",{type:"number",step:"0.5"}); i.value=e[key]; i.addEventListener("input",()=>{e[key]=parseFloat(i.value)||0;save();mapRedraw();}); return i; };
+  const pick=(key,opts,labels)=>{ const sc=h("select",{}); opts.forEach((o,idx)=>{const op=h("option",{value:o},labels?labels[idx]:o);if(e[key]===o)op.selected=true;sc.append(op);}); sc.addEventListener("change",()=>{e[key]=sc.value;save();mapRedraw();}); return sc; };
+  const dlgIds=(s.dialogues||[]).map(d=>d.id);
+  // position
+  box.append(h("div",{class:"ifield"},h("label",{},"Position (x, y)"),
+    h("div",{class:"xy"}, num("x"), num("y"))));
+  box.append(field("ref — name it to wire behaviour in code (optional)", txt("ref","e.g. gate, tower_lever")));
+  if(e.type==="npc"){
+    box.append(field("Name / character", (()=>{ const sc=h("select",{}); sc.append(h("option",{value:""},"— name below —")); D.characters.forEach(c=>{const o=h("option",{value:c.key},`${c.name} (${c.key})`);if(e.name===c.key)o.selected=true;sc.append(o);}); sc.addEventListener("change",()=>{e.name=sc.value;save();mapRedraw();}); return sc; })()));
+    box.append(field("Dialogue id", pick("dialogue",[""].concat(dlgIds),["(none)"].concat(dlgIds))));
+  } else if(e.type==="enemy"){
+    box.append(field("Variant", pick("variant",["slime","beetle"])));
+    box.append(field("Patrol min x (optional)", num2(e,"patrolMin")));
+    box.append(field("Patrol max x (optional)", num2(e,"patrolMax")));
+  } else if(e.type==="item"){
+    box.append(field("Item", (()=>{ const sc=h("select",{}); D.items.forEach(it=>{const o=h("option",{value:it.key},`${it.icon} ${it.name} (${it.key})`);if(e.itemId===it.key)o.selected=true;sc.append(o);}); sc.addEventListener("change",()=>{e.itemId=sc.value;save();mapRedraw();}); return sc; })()));
+    box.append(field("Unique id (respawn guard)", txt("uid","e.g. frag_a")));
+  } else if(e.type==="lever"||e.type==="gate"){
+    box.append(field("Flag", txt("flag","e.g. gate_1_open")));
+    if(e.type==="gate") box.append(h("div",{class:"ifield"},h("label",{},"Size (w, h) — a gate is a wall"),
+      h("div",{class:"xy"}, num2(e,"w"), num2(e,"h"))));
+  } else if(e.type==="exit"){
+    box.append(field("Requires item (optional)", (()=>{ const sc=h("select",{}); sc.append(h("option",{value:""},"(none)")); D.items.forEach(it=>{const o=h("option",{value:it.key},it.name);if(e.requiresItem===it.key)o.selected=true;sc.append(o);}); sc.addEventListener("change",()=>{e.requiresItem=sc.value;save();mapRedraw();}); return sc; })()));
+  } else if(e.type==="sign"){
+    box.append(field("Dialogue id", pick("dialogue",[""].concat(dlgIds),["(none)"].concat(dlgIds))));
+  } else if(e.type==="hazard"){
+    box.append(field("Kind", pick("kind",["spikes","pit"])));
+    box.append(h("div",{class:"ifield"},h("label",{},"Size (w, h)"),
+      h("div",{class:"xy"}, num2(e,"w"), num2(e,"h"))));
+  }
+  box.append(h("div",{class:"row",style:"margin-top:12px;justify-content:space-between"},
+    h("span",{class:"faint",style:"font-size:11px"},"tip: Select tool + click to re-select"),
+    h("button",{class:"btn ghost tiny",style:"color:var(--danger);border-color:var(--danger)",onclick:()=>{ map.entities=map.entities.filter(x=>x.id!==e.id); mapSelEnt=null; save(); viewMap(); }},"Delete")));
+  return box;
+}
+function num2(e,key){ const i=h("input",{type:"number",step:"1",placeholder:"auto"}); i.value=e[key]??""; i.addEventListener("input",()=>{ e[key]= i.value===""?undefined:(parseFloat(i.value)||0); save(); }); return i; }
+function mapRedraw(){ const cv=document.querySelector(".map-canvas-wrap canvas"); const s=D.stages[D._sel]; if(cv&&s?.map) drawMap(cv,s.map); }
+
+/* export generators for the selected stage's map */
+function selMap(){ const s=D._sel?D.stages[D._sel]:null; return s?{s,map:ensureMap(s)}:null; }
+/** studio entity → engine map-entity schema (src/world/MapData.js ENTITY_TYPES).
+    Unknown/extra fields (w, h, auto, color, speed, lockedText…) pass through untouched,
+    so importing a live map and exporting it back is lossless. */
+function toMapEntity(e){
+  const { id, patrolMin, patrolMax, ...rest } = e;      // strip studio-internal fields
+  const o = { ...rest, type:e.type, x:e.x, y:e.y };
+  if(e.type==="enemy"){
+    if(!e.variant || e.variant==="slime") delete o.variant;             // slime is the default class
+    if(patrolMin!=null || patrolMax!=null)
+      o.patrol={ minX:patrolMin ?? Math.floor(e.x-3), maxX:patrolMax ?? Math.ceil(e.x+3) };
+  }
+  for(const k of Object.keys(o)) if(o[k]==="" || o[k]===undefined) delete o[k];
+  return o;
+}
+function genMapJson(){
+  const sm=selMap(); if(!sm) return "// Pick a stage first";
+  const m=sm.map;
+  const obj={ version:1, id:sm.s.id, mood:m.mood, seed:m.seed, autoForest:m.autoForest!==false,
+    spawn:{x:m.spawn.x,y:m.spawn.y}, rows:m.rows, decorations:m.decorations||[],
+    entities:(m.entities||[]).map(toMapEntity) };
+  return JSON.stringify(obj,null,2);
+}
+function genMapEntities(){
+  const sm=selMap(); if(!sm) return "// Pick a stage first";
+  const m=sm.map, L=[];
+  L.push(`// ${sm.s.id} — paste inside build() of the stage class`);
+  L.push(`this.spawnPlayer(${m.spawn.x}, ${m.spawn.y});`);
+  for(const e of m.entities){
+    const xy=`x: ${e.x}, y: ${e.y}`;
+    if(e.type==="npc"){ const d=e.dialogue?`, dialogue: ${jsStr(e.dialogue)}`:""; L.push(`this.add(new NPC({ name: ${jsStr(e.name||"npc")}, ${xy}${d} }));`); }
+    else if(e.type==="enemy"){ const cls=e.variant==="beetle"?"Beetle":"Enemy"; const pat=(e.patrolMin!=null||e.patrolMax!=null)?`, patrol: { minX: ${e.patrolMin??Math.floor(e.x-3)}, maxX: ${e.patrolMax??Math.ceil(e.x+3)} }`:""; L.push(`this.add(new ${cls}({ ${xy}${pat} }));`); }
+    else if(e.type==="item"){ const u=e.uid?`, uid: ${jsStr(e.uid)}`:""; L.push(`this.add(new Collectible({ itemId: ${jsStr(e.itemId||"item")}, ${xy}${u} }));`); }
+    else if(e.type==="lever"){ L.push(`this.add(new Lever({ ${xy}, flag: ${jsStr(e.flag||"flag")} }));`); }
+    else if(e.type==="gate"){ L.push(`this.gate = this.add(new Gate({ ${xy}, flag: ${jsStr(e.flag||"flag")} }));`); }
+    else if(e.type==="exit"){ const ri=e.requiresItem?`, requiresItem: ${jsStr(e.requiresItem)}`:""; L.push(`this.add(new ExitDoor({ ${xy}${ri} }));`); }
+    else if(e.type==="checkpoint"){ L.push(`this.add(new Checkpoint({ ${xy} }));`); }
+    else if(e.type==="sign"){ const d=e.dialogue?`, dialogue: ${jsStr(e.dialogue)}`:""; L.push(`this.add(new Sign({ ${xy}${d} }));`); }
+    else if(e.type==="hazard"){ L.push(`this.add(new Hazard({ ${xy}, kind: ${jsStr(e.kind||"spikes")} }));`); }
+  }
+  return L.join("\n")+"\n";
+}
+function importMapPrompt(s,map){
+  const bg=h("div",{class:"modal-bg",onclick:(ev)=>{if(ev.target===bg)bg.remove();}});
+  const m=h("div",{class:"modal"});
+  m.append(h("h3",{},"Import map JSON"),
+    h("p",{class:"muted",style:"font-size:13px;margin:0 0 10px"},"Paste a maps/<id>.json (MapData format). Terrain, spawn, mood, seed, decorations and entities all load in — so you can pull the live level in, edit it, and export it back."));
+  const ta=h("textarea",{rows:"8",style:"font-family:var(--f-mono);font-size:12px",placeholder:'{ "version":1, "id":"'+s.id+'", "rows":[...], ... }'});
+  m.append(ta, h("div",{class:"mrow"},
+    h("button",{class:"btn ghost",onclick:()=>bg.remove()},"Cancel"),
+    h("button",{class:"btn",onclick:()=>{
+      try{ const o=JSON.parse(ta.value);
+        if(!Array.isArray(o.rows)||!o.rows.length) throw 0;
+        const W=o.rows[0].length;
+        if(o.rows.some(r=>typeof r!=="string"||r.length!==W||/[^.#=]/.test(r))) throw 0;
+        map.rows=o.rows.slice(); map.width=W; map.height=o.rows.length;
+        if(o.spawn) map.spawn={x:o.spawn.x,y:o.spawn.y};
+        if(o.mood) map.mood=o.mood; if(Number.isInteger(o.seed)) map.seed=o.seed;
+        if(o.autoForest!==undefined) map.autoForest=o.autoForest;
+        if(Array.isArray(o.decorations)) map.decorations=o.decorations;
+        // 모든 필드를 그대로 보존해 들여오기 (w/h/auto/color/speed/lockedText 등 손실 방지)
+        if(Array.isArray(o.entities)) map.entities=o.entities.map(e=>{
+          const t={ ...e, id:uid("ent") };
+          if(e.type==="enemy"){ t.variant=e.variant||"slime";
+            if(e.patrol){ t.patrolMin=e.patrol.minX; t.patrolMax=e.patrol.maxX; } delete t.patrol; }
+          return t;
+        });
+        mapSelEnt=null; save(); bg.remove(); viewMap(); toast("Map imported");
+      }catch(e){ toast("Invalid map JSON (rows must be equal-length . # = strings)"); }
+    }},"Import")));
+  bg.append(m); document.body.append(bg);
+}
+
 /* ═══════════════ render dispatch ═══════════════ */
 function renderAll(){ renderNav(); renderView(); }
 function renderView(){
@@ -1147,6 +1461,7 @@ function renderView(){
     case "items": return viewItems();
     case "structure": return viewStructure();
     case "stage": return viewStage();
+    case "map": return viewMap();
     case "writer": return viewWriter();
     case "export": return viewExport();
   }

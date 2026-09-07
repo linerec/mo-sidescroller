@@ -2,6 +2,8 @@ export const DRAFT_PREFIX = 'mo:map-draft:v1:';
 export const MAP_IDS = ['stage-1-1', 'stage-1-2'];
 export const PROP_IDS = ['tree_oak','tree_birch','tree_willow','bush_0','bush_1','fern','mushrooms','flowers','grass','rock','arch','distant_tree','hill','ancient_tree','root_arch','glow_reeds','hanging_vine'];
 export const LAYERS = { far: -32, mid: -12, near: -3 };
+/** 맵 JSON에 담을 수 있는 게임플레이 엔티티 종류 (배치는 데이터, 이야기 연결은 스테이지 코드) */
+export const ENTITY_TYPES = ['sign','npc','enemy','item','lever','gate','exit','checkpoint','hazard'];
 
 export function validateMap(input) {
   const m = structuredClone(input);
@@ -14,6 +16,14 @@ export function validateMap(input) {
   if (!Array.isArray(m.decorations) || m.decorations.length > 300) throw new Error('장식은 300개까지 배치할 수 있습니다.');
   for (const p of m.decorations) {
     if (!PROP_IDS.includes(p.asset) || !Object.hasOwn(LAYERS,p.layer) || ![p.x,p.y,p.scale].every(Number.isFinite) || p.scale < .25 || p.scale > 3 || p.x < -50 || p.x > width+50 || p.y < -10 || p.y > 70) throw new Error('장식의 종류·위치·배율을 확인하세요.');
+  }
+  // 게임플레이 엔티티 (선택) — 없으면 빈 배열. 좌표는 월드 단위(좌하단 0,0)
+  if (m.entities === undefined) m.entities = [];
+  if (!Array.isArray(m.entities) || m.entities.length > 200) throw new Error('엔티티는 200개까지 배치할 수 있습니다.');
+  for (const e of m.entities) {
+    if (!e || !ENTITY_TYPES.includes(e.type)) throw new Error(`알 수 없는 엔티티 종류: ${e && e.type}`);
+    if (!Number.isFinite(e.x) || !Number.isFinite(e.y)) throw new Error('엔티티 좌표가 올바르지 않습니다.');
+    if (e.ref !== undefined && typeof e.ref !== 'string') throw new Error('엔티티 ref는 문자열이어야 합니다.');
   }
   m.autoForest = m.autoForest !== false;
   return m;
