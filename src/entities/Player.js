@@ -21,14 +21,20 @@ export class Player extends Entity {
     this._wasGround = false; this._auto = null;           // 컷씬 자동 이동
     this.control = true;                                 // false면 입력 무시
     this.nearest = null;                                 // 상호작용 가능한 가장 가까운 엔티티
+    this.maxTilt = THREE.MathUtils.degToRad(38);   // 경사 정렬 최대 각도(과하지 않게)
     this.setBody({ ...this.character.collider, type: 'dynamic' });
     this.#buildMesh();
   }
 
   #buildMesh() {
     this.visual = new CharacterVisual(this.character);
-    this.rig = this.visual.object; this.rig.position.y = -this.body.hh;
-    this.object.add(this.rig);
+    this.rig = this.visual.object;
+    // 기울기 그룹: 회전 중심을 "발"에 두어 경사면에 발바닥이 붙도록 한다.
+    // (CharacterVisual.object 는 좌우 바라보기로 rotation.y 를 쓰므로, 기울기는 부모에서 따로 준다)
+    this.tilt = new THREE.Group();
+    this.tilt.position.y = -this.body.hh;
+    this.tilt.add(this.rig);
+    this.object.add(this.tilt);
     this.ready = this.visual.ready;
     this.slash = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.045, 6, 24, Math.PI * 0.9), new THREE.MeshBasicMaterial({ color: 0xffe5a0, transparent: true, opacity: 0.9 }));
     this.slash.visible = false; this.object.add(this.slash);
@@ -236,8 +242,23 @@ export class Player extends Entity {
     this._pendingAttack = null; this._pendingItem = null; this._attackCd = 0; this._attackT = 0;
     this._lightTime = 0; this.itemLight.intensity = 0;
     this.slash.visible = false; this.visual.reset();
+    if (this.tilt) this.tilt.rotation.z = 0;
     this.game.camera.follow(this, true);
     this.game.events.emit('player:respawn', { x, y });
+  }
+
+  /**
+   * 바닥 기울기에 맞춰 모찌를 기울인다 — 발(회전 중심)이 경사면에 붙어 보이도록.
+   * 물리 충돌은 그대로 AABB이고, 여기서는 보이는 자세만 정렬한다.
+   * 공중에서는 수평으로 되돌아오고, 급경사에서는 과하지 않게 제한한다.
+   */
+  #alignToGround(dt) {
+    const b = this.body;
+    const target = (b.onGround && this.state !== 'dead')
+      ? THREE.MathUtils.clamp(Math.atan(b.groundSlope || 0), -this.maxTilt, this.maxTilt)
+      : 0;
+    const k = Math.min(1, dt * (b.onGround ? 12 : 6));      // 착지 중엔 빠르게, 공중에선 부드럽게
+    this.tilt.rotation.z += (target - this.tilt.rotation.z) * k;
   }
 
   /** Also called while the stage-clear/death screen freezes gameplay physics. */
@@ -245,6 +266,7 @@ export class Player extends Entity {
     const base = this.state === 'dead' ? 'dead' : this.state === 'run' ? 'run' :
       !this.body.onGround ? 'fall' : this._idleTime >= this.character.sleepAfter ? 'sleepy' : 'idle';
     this.visual.update(dt, base, this.facing);
+    this.#alignToGround(dt);
     // Keep the contact pose readable, then blink during recovery.
     this.rig.visible = this.state !== 'dead' && this.invuln > 0 && this.visual.motion.name !== 'hit' ? Math.floor(this.invuln * 12) % 2 === 0 : true;
     if (this._attackT > 0) {

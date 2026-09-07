@@ -4,6 +4,8 @@ export const PROP_IDS = ['tree_oak','tree_birch','tree_willow','bush_0','bush_1'
 export const LAYERS = { far: -32, mid: -12, near: -3 };
 /** 맵 JSON에 담을 수 있는 게임플레이 엔티티 종류 (배치는 데이터, 이야기 연결은 스테이지 코드) */
 export const ENTITY_TYPES = ['sign','npc','enemy','item','lever','gate','exit','checkpoint','hazard'];
+/** 비정규 지형(폴리라인) 윤곽 생성기 — TerrainShapes.js 와 대응. 'points'는 좌표 직접 지정 */
+export const SURFACE_SHAPES = ['points','flat','slope','cliff','hill','dome','bezier','ridge','creatureBack'];
 
 export function validateMap(input) {
   const m = structuredClone(input);
@@ -24,6 +26,18 @@ export function validateMap(input) {
     if (!e || !ENTITY_TYPES.includes(e.type)) throw new Error(`알 수 없는 엔티티 종류: ${e && e.type}`);
     if (!Number.isFinite(e.x) || !Number.isFinite(e.y)) throw new Error('엔티티 좌표가 올바르지 않습니다.');
     if (e.ref !== undefined && typeof e.ref !== 'string') throw new Error('엔티티 ref는 문자열이어야 합니다.');
+  }
+  // 비정규 지형 (선택) — 언덕/절벽/괴물 등 같은 폴리라인 표면
+  if (m.surfaces === undefined) m.surfaces = [];
+  if (!Array.isArray(m.surfaces) || m.surfaces.length > 60) throw new Error('비정규 지형은 60개까지 배치할 수 있습니다.');
+  for (const s of m.surfaces) {
+    if (!s || !SURFACE_SHAPES.includes(s.shape || 'points')) throw new Error(`알 수 없는 지형 모양: ${s && s.shape}`);
+    if (!Number.isFinite(s.x) || !Number.isFinite(s.y)) throw new Error('지형 좌표가 올바르지 않습니다.');
+    if ((s.shape || 'points') === 'points') {
+      if (!Array.isArray(s.points) || s.points.length < 2) throw new Error('points 지형은 좌표가 2개 이상 필요합니다.');
+      if (s.points.some((p) => !Array.isArray(p) || p.length !== 2 || !p.every(Number.isFinite)))
+        throw new Error('지형 좌표는 [x, y] 숫자쌍이어야 합니다.');
+    }
   }
   m.autoForest = m.autoForest !== false;
   return m;

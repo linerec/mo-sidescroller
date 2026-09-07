@@ -3,7 +3,7 @@ import { buildFromAscii } from '../../engine/LevelLayout.js';
 import { Trigger } from '../../entities/Interactables.js';
 import { FOREST_ENV } from '../../world/ForestAtmosphere.js';
 import { loadMap } from '../../world/MapData.js';
-import { spawnMapEntities } from '../../world/MapEntities.js';
+import { spawnMapEntities, spawnMapSurfaces } from '../../world/MapEntities.js';
 import { mountWoodland, dressForestKeeper } from '../../world/WoodlandStage.js';
 
 /**
@@ -43,6 +43,7 @@ export class Stage_1_1_Awakening extends Stage {
     // ── 배치는 데이터에서 (maps/stage-1-1.json 의 entities[]) ──
     //    표지판·NPC·적·수집품·레버/문·함정·체크포인트·출구가 전부 맵 JSON에서 생성된다.
     //    맵 에디터에서 옮기면 코드 수정 없이 반영되고, ?draft=stage-1-1 로 바로 확인할 수 있다.
+    spawnMapSurfaces(this, map);            // 비정규 지형(언덕·절벽·괴물 등)
     const refs = spawnMapEntities(this, map);
 
     // ── 이야기 연결은 코드에서 (데이터가 아닌 "행동"만) ──
